@@ -14,6 +14,7 @@
     "dist"
   ],
   "scripts": {
+    "create-npm-link": "npm link",
     "build&watch": "rollup -c --watch",
     "build": "rollup -c  --format es",
     "publish": "npm publish --access public"

@@ -1,4 +1,3 @@
-
 import {CustomEventDispatcher, FileUploader, MessageBuilder} from "./lib"
 import MessageChanel from "./MessageChanel"
 import SocketConnection from "./SocketConnection"
@@ -87,15 +86,15 @@ class MessageService {
             this.callback(applicationEvent, appEventDetail)
         }
     }
-   /*
-   //adapter send delivery
-   onReceivedMessage = ({clientMessageId, room}) => {
-        let payload = {
-            clientMessageId,
-            'state': MessagingEnums.DeliveryStatus.CLIENT_DELIVERY
-        }
-        this.buildEventMessage(room, MessagingEnums.EventMessageTypes.MESSAGE_DELIVERY, payload).then(this.sendMessage)
-    }*/
+    /*
+    //adapter send delivery
+    onReceivedMessage = ({clientMessageId, room}) => {
+         let payload = {
+             clientMessageId,
+             'state': MessagingEnums.DeliveryStatus.CLIENT_DELIVERY
+         }
+         this.buildEventMessage(room, MessagingEnums.EventMessageTypes.MESSAGE_DELIVERY, payload).then(this.sendMessage)
+     }*/
 }
 
 export default MessageService
