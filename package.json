@@ -1,0 +1,45 @@
+{
+  "name": "messaging-service-client",
+  "version": "1.0.0-beta.010",
+  "description": "",
+  "type": "module",
+  "module": "./dist/index.es.js",
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "browserslist": [
+    ">0.1% or last 5 version,not dead,not IE 11,not op_mini all"
+  ],
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build&watch": "rollup -c --watch",
+    "build": "rollup -c  --format es",
+    "publish": "npm publish --access public"
+  },
+  "devDependencies": {
+    "@babel/plugin-transform-arrow-functions": "^7.20.7",
+    "@babel/plugin-transform-typescript": "^7.20.7",
+    "@babel/preset-env": "^7.20.2",
+    "@babel/preset-typescript": "^7.18.6",
+    "@rollup/plugin-babel": "^6.0.3",
+    "@rollup/plugin-commonjs": "^24.0.0",
+    "@rollup/plugin-json": "^6.0.0",
+    "@rollup/plugin-node-resolve": "^15.0.1",
+    "@rollup/plugin-typescript": "^10.0.1",
+    "@types/react": "^18.0.26",
+    "rollup": "^3.8.1",
+    "rollup-plugin-dts": "^5.1.0",
+    "rollup-plugin-peer-deps-external": "^2.2.4",
+    "tslib": "^2.4.1",
+    "typescript": "^4.9.4"
+  },
+  "publishConfig": {
+    "registry": "https://nexus.demisco.com/repository/dms-npm-repo/"
+  },
+  "dependencies": {
+    "sockjs-client": "^1.6.1",
+    "@stomp/stompjs": "^7.0.0-beta2"
+  }
+}

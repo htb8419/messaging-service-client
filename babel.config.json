@@ -1,0 +1,23 @@
+{
+  "presets": [
+    [
+      "@babel/preset-env",
+      {
+        "modules": false,
+        "debug": true,
+        "useBuiltIns": false,
+        "targets": {
+          "esmodules": true
+        }
+      }
+    ],
+    ["@babel/preset-typescript",{
+
+    }]
+  ],
+  "plugins": [
+    "@babel/plugin-transform-arrow-functions",
+    "@babel/proposal-class-properties",
+    "@babel/proposal-object-rest-spread"
+  ]
+}
