@@ -1,10 +1,10 @@
 import {CustomEventDispatcher, FileUploader, MessageBuilder} from "./lib"
 import MessageChanel from "./MessageChanel"
 import SocketConnection from "./SocketConnection"
-import WebRtcConnection from "./WebRtcConnection";
 import MessagingEnums from "./model/MessagingEnums";
 
 class MessageService {
+    static $WEB_RTC_EVENTS = ['OFFER', 'ANSWER', 'CANDIDATE', 'END_CALL'];
 
     constructor(callback) {
         this.callback = callback
@@ -25,12 +25,16 @@ class MessageService {
 
     connect = () => {
         new SocketConnection().connect()
+
     }
     disconnect = () => {
 
     }
 
     buildEventMessage = (roomId, eventType, payload) => {
+        if (!roomId) {
+            throw new Error('roomId is null!')
+        }
         return this.messageBuilder.eventMessage(roomId, eventType, payload)
     }
     buildTextMessage = (roomId, text) => {
@@ -45,56 +49,32 @@ class MessageService {
         this.messageSender.send(message)
     }
 
-    call = (roomId) => {
-        this.webRtcConnection = new WebRtcConnection(this, roomId);
-        this.webRtcConnection.connect().then(() => {
-            this.handleAppEvents({
-                type: MessagingEnums.ApplicationEvents.CALL_STATE_CHANGE,
-                detail: {state: MessagingEnums.VoiceCallStates.CONNECTING}
-            })
-            this.buildEventMessage(roomId, MessagingEnums.EventMessageTypes.WEBRTC_CONNECTION_REQUEST, {})
-                .then(this.sendMessage)
-            //this.webRtcConnection.sendOffer()
-        })
-    }
-
     //#-------------------- Handle Events --------------------#//
     handleAppEvents = ({type: eventType, detail}) => {
         let appEventDetail = null;
-        console.log('handle event [', eventType, '], detail >>', detail)
 
-        if (eventType === MessagingEnums.ApplicationEvents.RECEIVED_MESSAGE) {
-            let {message} = detail;
-            appEventDetail = message
-            if (message.messageType === 'EVENT') {
-                eventType = message.type;
-                if (this.webRtcConnection) {
-                    this.webRtcConnection.handleEvents(eventType, detail)
-                }
-            } else {
-                //this.onReceivedMessage(appEventDetail)
-            }
-        } else if (eventType === MessagingEnums.ApplicationEvents.CONNECTION_STATE_CHANGE) {
+        if (eventType === MessagingEnums.ApplicationEvents.CONNECTION_STATE_CHANGE) {
             let {stompClient, connected, state} = detail
             if (stompClient && connected) {
                 this.messageSender = new MessageChanel(stompClient)
             }
             appEventDetail = {connected, state}
+        } else if (eventType === MessagingEnums.ApplicationEvents.RECEIVED_MESSAGE) {
+            let {message} = detail;
+            appEventDetail = message
+            if (message.messageType === 'EVENT') {
+                if (message.state && MessagingEnums.webRtcEvents.hasOwnProperty(message.state)) {
+                    console.log('ignored process rtc events.')
+                    return;
+                }
+                eventType = message.type
+            }
         }
         let applicationEvent = this.applicationEventMap.get(eventType)
         if (applicationEvent && appEventDetail) {
             this.callback(applicationEvent, appEventDetail)
         }
     }
-    /*
-    //adapter send delivery
-    onReceivedMessage = ({clientMessageId, room}) => {
-         let payload = {
-             clientMessageId,
-             'state': MessagingEnums.DeliveryStatus.CLIENT_DELIVERY
-         }
-         this.buildEventMessage(room, MessagingEnums.EventMessageTypes.MESSAGE_DELIVERY, payload).then(this.sendMessage)
-     }*/
 }
 
 export default MessageService

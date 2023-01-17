@@ -1,6 +1,6 @@
-import XhrRequest from "./XhrRequest";
+import ApplicationConfig from "../ApplicationConfig";
 
-class FileUploader{
+class FileUploader {
     static upload(file) {
         if (!file) {
             throw new Error("selected file is undefined")
@@ -11,10 +11,22 @@ class FileUploader{
         if (!mimeType || mimeType === '') {
             mimeType = "text/plain"
         }
-        return Promise.resolve({fileId:'testFileId', name, mimeType, size})
-      /*  return XhrRequest.POST("/file", data).then(fileId => {
-            return {fileId, fileName, fileMimeType, fileSize}
-        })*/
+        let {accessToken,fileServiceUrl} = ApplicationConfig.getConfig()
+        return fetch(fileServiceUrl, {
+            method: 'POST',
+            body: data,
+            headers: {
+                'Authorization': 'bearer ' + accessToken
+            }
+        }).then(response => response.json()).then(response => response.result.fileId).then(fileId => {
+            return {fileId, name, mimeType, size}
+        })
+        //return Promise.resolve({fileId:'testFileId', name, mimeType, size})
+        /*  return XhrRequest.POST("/file", data).then(fileId => {
+              return {fileId, fileName, fileMimeType, fileSize}
+          })*/
+
     }
 }
+
 export default FileUploader

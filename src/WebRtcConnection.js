@@ -14,7 +14,7 @@ class WebRtcConnection {
 
     constructor(messageService, roomId) {
         this.messageService = messageService
-        this.roomId = roomId
+        this.roomId =roomId
         this.rtcConnection = null
     }
 
@@ -28,6 +28,7 @@ class WebRtcConnection {
                 this.sendEventMessage(MessagingEnums.EventMessageTypes.WEBRTC_CANDIDATE, candidate)
             }).then(rtcConnection => {
             this.rtcConnection = rtcConnection
+            console.log('rtcConnection >', rtcConnection)
         })
     }
     sendOffer = () => {
@@ -55,12 +56,11 @@ class WebRtcConnection {
             this.rtcConnection.addIceCandidate(new RTCIceCandidate(iceCandidate)).catch(this.handleError)
         }
     }
-
-    endCall = () => {
-    }
-
     sendEventMessage(event, payload) {
-        this.messageService.buildEventMessage(this.roomId, event, payload).then(this.messageService.sendMessage)
+        this.messageService.buildEventMessage(this.roomId, 'WRTC', {
+            state: event,
+            rtcObject: payload
+        }).then(this.messageService.sendMessage)
     }
 
     closeConnection = (force = false) => {
@@ -91,36 +91,21 @@ class WebRtcConnection {
                 break;
         }
     }
-    handleEvents = (eventType, detail) => {
-        let {payload} = detail.message
-        if (eventType === MessagingEnums.EventMessageTypes.WEBRTC_CONNECTION_RESPONSE) {
-            this.onWebRtcConnectionResponse(payload)
-        } else if (eventType === MessagingEnums.EventMessageTypes.WEBRTC_OFFER) {
-            this.onOffer(payload)
-        } else if (eventType === MessagingEnums.EventMessageTypes.WEBRTC_ANSWER) {
-            this.rtcConnection.setRemoteDescription(new RTCSessionDescription(payload))
-        } else if (eventType === MessagingEnums.EventMessageTypes.WEBRTC_CANDIDATE) {
-            this.onRTCIceCandidate(payload)
+    handleRtcEvents = (eventType, rtcObject) => {
+        console.log('webRtcConnection.handleAppEvents >> [', eventType, '], rtcObject >>', rtcObject)
+        switch (eventType) {
+            case MessagingEnums.webRtcEvents.OFFER:
+                this.onOffer(rtcObject)
+                break
+            case MessagingEnums.webRtcEvents.ANSWER:
+                this.rtcConnection.setRemoteDescription(new RTCSessionDescription(rtcObject))
+                break
+            case MessagingEnums.webRtcEvents.CANDIDATE:
+                this.onRTCIceCandidate(rtcObject)
+                break
         }
     }
-    onWebRtcConnectionResponse = (payload) => {
-        console.log('message.payload.accepted >> ', payload)
-        if (payload.accepted) {
-            this.sendOffer()
-            // let currentVoiceCallState = getSharedStateValue(SubjectTypes.VOICE_CALL)
-            /*
-            if (CallStateCodes.WAITING === currentVoiceCallState.state) {
-                let voiceCallState = {startTime: new Date(), state: CallStateCodes.CALLING}
-                updateSharedState(SubjectTypes.VOICE_CALL, voiceCallState)
 
-            }*/
-            //this.buildAndSendMessage(MessageTypes.TEXT, "voice call", false)
-
-        } else {
-            //notify(I18nMessages.Warn.agentIsBusy, NotificationTypes.warn)
-            this.endCall()
-        }
-    }
     handleError = error => {
         Logger.error('webRtc error >>', error)
         let errorMessage;

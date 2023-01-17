@@ -1,10 +1,11 @@
 import MessageService from './MessageService'
-import ApplicationConfig from "./ApplicationConfig";
-import {Logger, XhrRequest} from "./lib";
-import {ApplicationErrors} from "./model";
-import getRoomInfo from './lib/getRoomInfo'
+import ApplicationConfig from "./ApplicationConfig"
+import {Logger, XhrRequest} from "./lib"
+import {ApplicationErrors} from "./model"
 import MessagingEnums from './model/MessagingEnums'
-
+import VoiceService from './VoiceService'
+import getRoomInfo from "./lib/getRoomInfo";
+import fileUrl from "./lib/fileUrl";
 const MESSAGE_SERVICE_DEFAULT_OPTIONS = {
     autoConnect: true,
     messageVersion: 'V2',
@@ -42,7 +43,9 @@ function verifyOptions(options) {
 }
 
 export {
+    fileUrl,
     getRoomInfo,
     MessagingEnums,
-    initialMessageService
+    initialMessageService,
+    VoiceService
 }

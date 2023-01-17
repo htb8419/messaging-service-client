@@ -9,10 +9,15 @@ class ApplicationConfig {
         this.messageVersion = messageVersion
         this.username = JwtUtil.getUsername(this.accessToken)
         this.sessionId = JwtUtil.getSessionId(this.accessToken)
+        this.fileServiceUrl='http://192.168.103.34:9011/file'
     }
 
     getServerUrl() {
         return this.serverUrl
+    }
+
+    getFileServiceUrl() {
+        return this.fileServiceUrl
     }
 
     getAccessToken() {

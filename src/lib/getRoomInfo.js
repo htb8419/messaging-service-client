@@ -11,6 +11,9 @@ function getRoomInfo(meetingCode) {
         .then(response =>response.json())
         .then(responseJson => {
             return responseJson.result
+        }).catch(ex=>{
+            console.error('getRoomInfo >',ex)
+            alert('server error')
         })
 }
 
