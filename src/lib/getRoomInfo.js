@@ -7,7 +7,7 @@ function getRoomInfo(meetingCode) {
     }
     const SERVER_URL='https://hdtest.demisco.com'
     //const SERVER_URL='http://192.168.103.127:8082'
-    return fetch(`${SERVER_URL}/room/roomInfo/${meetingCode}`)
+    return fetch(`${SERVER_URL}/ro000om/roomInfo/${meetingCode}`)
         .then(response =>response.json())
         .then(responseJson => {
             return responseJson.result

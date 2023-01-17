@@ -6,28 +6,40 @@ import ApplicationConfig from "./ApplicationConfig";
 
 class SocketConnection {
 
-    connect() {
-        this.tryCount = 0
-        this.stompClient = null
-        this.tryConnect()
+    constructor() {
+        this.stompClient = this.createClientOverSocket();
+        this.stompClient.beforeConnect = () => {
+            let {retryConnect: {maxTryCount}} = ApplicationConfig.getConfig();
+            console.log('tryCount :', this.tryCount, ' maxTryCount :', maxTryCount)
+            if (this.tryCount === maxTryCount) {
+                this.connectFailed()
+            } else {
+                this.onConnectionStateChange(MessagingEnums.ConnectionStates.CONNECTING)
+                this.tryCount++
+            }
+        }
+        this.stompClient.onConnect = this.connectSuccess
+        this.stompClient.onDisconnect = this.connectFailed
+        //this.stompClient.onWebSocketClose = ?
+        //this.stompClient.onWebSocketError = ?
     }
 
-    tryConnect = () => {
-        this.onConnectionStateChange(MessagingEnums.ConnectionStates.CONNECTING)
-        this.stompClient = this.createClientOverSocket();
-        this.stompClient.debug = Logger.debug.bind(null, '[stomp] :')
-        this.stompClient.onConnect=this.connectSuccess
-        this.stompClient.onDisconnect=this.connectFailed
+    connect() {
+        this.tryCount = 0
         this.stompClient.activate()
     }
+
     connectSuccess = () => {
-        console.log('socket connection successful', this.stompClient)
-        this.tryCount = 0
         this.onConnectionStateChange(MessagingEnums.ConnectionStates.CONNECTED)
     }
     connectFailed = () => {
-        console.log('socket connection failed, try connect condition [', this.tryCount , ']')
-        this.onConnectionStateChange(MessagingEnums.ConnectionStates.DISCONNECTED)
+        this.tryCount = 0
+        if (this.stompClient && this.stompClient.active) {
+            this.stompClient?.deactivate().then(() => {
+                this.onConnectionStateChange(MessagingEnums.ConnectionStates.DISCONNECTED)
+            })
+        }
+
     }
     onConnectionStateChange = (connectionState) => {
         if (MessagingEnums.ConnectionStates.CONNECTED === connectionState && this.stompClient && !this.stompClient.connected) {
@@ -42,14 +54,14 @@ class SocketConnection {
         }
     }
     createClientOverSocket = () => {
-        let {serverUrl, accessToken, sessionId} = ApplicationConfig.getConfig();
-        let wsUrl = serverUrl.startsWith("https://") ? serverUrl.replace('https://', 'wss://') : serverUrl.replace('http://', 'ws://')
+        let {socketUrl, connectionTimeout, retryConnect} = ApplicationConfig.getConfig();
         return new StompClient({
-            brokerURL: `${wsUrl}/websocket?access_token=${accessToken}`,
-            debug: function (str) {
-                console.log(str);
+            brokerURL: socketUrl,
+            debug: function (msg) {
+                Logger.debug.bind('$stomp >', msg)
             },
-            reconnectDelay: 5000,
+            connectionTimeout: connectionTimeout,
+            reconnectDelay: retryConnect.reconnectDelay,
             heartbeatIncoming: 2000,
             heartbeatOutgoing: 2000,
         })

@@ -51,6 +51,7 @@ class MessageService {
 
     //#-------------------- Handle Events --------------------#//
     handleAppEvents = ({type: eventType, detail}) => {
+        console.log('event : ',eventType," detail > ",detail)
         let appEventDetail = null;
 
         if (eventType === MessagingEnums.ApplicationEvents.CONNECTION_STATE_CHANGE) {
