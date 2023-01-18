@@ -1,7 +1,8 @@
 import {MessagingEnums} from "./model";
 import MessageQueue from "./model/MessageQueue";
 import CustomEventDispatcher from "./lib/CustomEventDispatcher";
-import ApplicationConfig from "./ApplicationConfig";
+
+import SecurityContextHolder from "./lib/SecurityContextHolder";
 
 class MessageChanel {
 
@@ -10,7 +11,7 @@ class MessageChanel {
         this.syncIntervalId = null;
         this.stompClient = stompClient
         this.messageQueue = new MessageQueue()
-        let sessionId = ApplicationConfig.getConfig().getSessionId();
+        let {sessionId} = SecurityContextHolder.getCurrentContext()
         stompClient.subscribe(`/user/${sessionId}/queue/event`, this.receive)
         stompClient.subscribe(`/user/${sessionId}/queue/im`, this.receive)
     }

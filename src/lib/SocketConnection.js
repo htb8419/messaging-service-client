@@ -1,8 +1,9 @@
 import {Client as StompClient} from "@stomp/stompjs";
 
-import {MessagingEnums} from './model'
-import {CustomEventDispatcher, Logger} from "./lib";
-import ApplicationConfig from "./ApplicationConfig";
+import {MessagingEnums} from '../model'
+import {CustomEventDispatcher, Logger} from "./index";
+import ApplicationConfig from "../ApplicationConfig";
+import SecurityContextHolder from "./SecurityContextHolder";
 
 class SocketConnection {
 
@@ -32,6 +33,7 @@ class SocketConnection {
     connectSuccess = () => {
         this.onConnectionStateChange(MessagingEnums.ConnectionStates.CONNECTED)
     }
+
     connectFailed = () => {
         this.tryCount = 0
         if (this.stompClient && this.stompClient.active) {
@@ -39,26 +41,24 @@ class SocketConnection {
                 this.onConnectionStateChange(MessagingEnums.ConnectionStates.DISCONNECTED)
             })
         }
+    }
 
-    }
     onConnectionStateChange = (connectionState) => {
-        if (MessagingEnums.ConnectionStates.CONNECTED === connectionState && this.stompClient && !this.stompClient.connected) {
-            Logger.error('invalid stomp connection state')
-            //Todo Throw Error
-        } else {
-            CustomEventDispatcher.dispatchEvent(MessagingEnums.ApplicationEvents.CONNECTION_STATE_CHANGE, {
-                stompClient: this.stompClient,
-                connected: MessagingEnums.ConnectionStates.CONNECTED === connectionState,
-                state: connectionState
-            })
-        }
+        CustomEventDispatcher.dispatchEvent(MessagingEnums.ApplicationEvents.CONNECTION_STATE_CHANGE, {
+            stompClient: this.stompClient,
+            connected: MessagingEnums.ConnectionStates.CONNECTED === connectionState,
+            state: connectionState
+        })
     }
+
     createClientOverSocket = () => {
-        let {socketUrl, connectionTimeout, retryConnect} = ApplicationConfig.getConfig();
+        let {socketUrl, connectionTimeout, retryConnect} = ApplicationConfig.getConfig()
+        let {accessToken, sessionId} = SecurityContextHolder.getCurrentContext()
+        let socketAddress = `${socketUrl}/websocket?access_token=${accessToken}&sid=${sessionId}`
         return new StompClient({
-            brokerURL: socketUrl,
+            brokerURL: socketAddress,
             debug: function (msg) {
-                Logger.debug.bind('$stomp >', msg)
+                Logger.debug.bind('$stomp > ', msg)
             },
             connectionTimeout: connectionTimeout,
             reconnectDelay: retryConnect.reconnectDelay,
@@ -66,6 +66,7 @@ class SocketConnection {
             heartbeatOutgoing: 2000,
         })
     }
+
     createClientOverSockjs = () => {
         return null //temp
         /*  const Sockjs = require('sockjs-client')

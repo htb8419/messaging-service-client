@@ -1,4 +1,5 @@
 import ApplicationConfig from "../ApplicationConfig";
+import SecurityContextHolder from "./SecurityContextHolder";
 
 class XhrRequest {
     static CONTENT_TYPE_HEADER_KEY = 'content-type'
@@ -14,7 +15,9 @@ class XhrRequest {
 }
 
 function sendRequest(path, method, data, headers = {}) {
-    let {serverUrl, accessToken} = ApplicationConfig.getConfig()
+    let {serverUrl} = ApplicationConfig.getConfig()
+    let {accessToken} = SecurityContextHolder.getCurrentContext()
+
     if (!headers['Authorization']) {
         headers["Authorization"] = `bearer ${accessToken}`
     }

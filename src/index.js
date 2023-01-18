@@ -3,7 +3,7 @@ import ApplicationConfig from "./ApplicationConfig"
 import {Logger, XhrRequest} from "./lib"
 import {ApplicationErrors} from "./model"
 import MessagingEnums from './model/MessagingEnums'
-import VoiceService from './VoiceService'
+import CommunicationService  from './CommunicationService'
 import getRoomInfo from "./lib/getRoomInfo";
 import fileUrl from "./lib/fileUrl";
 
@@ -11,43 +11,32 @@ const MESSAGE_SERVICE_DEFAULT_OPTIONS = {
     autoConnect: true,
     messageVersion: 'V2',
     connectionTimeout: 5000,
+    audioElementId:'web-rtc-audio',
     retryConnect: {
         maxTryCount: 10,
         reconnectDelay: 3000
     }
 }
 
-function initialMessageService(options) {
+function initializeApp(options) {
     let appOptions = {...MESSAGE_SERVICE_DEFAULT_OPTIONS, ...options}
     verifyOptions(appOptions)
-    ApplicationConfig.createInstance(appOptions);
-    return login().then(() => {
-        let messageService = new MessageService(appOptions.callback);
-        messageService.connect()
-        return messageService
-    })
-}
-
-function login() {
-    let {serverUrl, accessToken} = ApplicationConfig.getConfig()
-    return XhrRequest.GET(`${serverUrl}/me`, {"Authorization": `bearer ${accessToken}`})
-        .catch(ex => {
-            Logger.error(ex)
-            throw ApplicationErrors.CONNECTION_FAILED
-        })
+    ApplicationConfig.createInstance(appOptions)
 }
 
 function verifyOptions(options) {
-    let {serverUrl, accessToken, callback} = options
-    if (!serverUrl || !accessToken || !callback) {
+    let {serverUrl, callback} = options
+    if (!serverUrl || !callback) {
         throw ApplicationErrors.INVALID_APP_OPTIONS
     }
 }
-
+//
+//let  CommunicationService=VoiceService
 export {
     fileUrl,
     getRoomInfo,
     MessagingEnums,
-    initialMessageService,
-    VoiceService
+    MessageService,
+    CommunicationService,
+    initializeApp
 }

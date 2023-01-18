@@ -1,9 +1,14 @@
 import {MessagingEnums} from "../model";
 import ApplicationConfig from "../ApplicationConfig";
-
-let sequenceNumber = 0
+import SecurityContextHolder from "./SecurityContextHolder";
 
 class MessageBuilder {
+
+    constructor() {
+        this.sequenceNumber = 1
+        let {sessionId} = SecurityContextHolder.getCurrentContext()
+        this.sessionId=sessionId
+    }
 
     instantMessage(roomId, text, fileInfo) {
         let media = fileInfo ? [fileInfo] : []
@@ -16,9 +21,10 @@ class MessageBuilder {
     }
 
     buildMessage(roomId, messageType, payload, headers = {}) {
-        this.sessionId = ApplicationConfig.getConfig().getSessionId()
-        const messageId = this.sessionId + "." + Date.now() + '.' + (++sequenceNumber)
-
+        if (!roomId) {
+            throw new Error('roomId is null!')
+        }
+        const messageId = this.sessionId + "." + Date.now() + '.' + (this.sequenceNumber++)
         let messagePayload = {
             [MessagingEnums.MessageBodyAttributes.ROOM_ID]: roomId,
             [MessagingEnums.MessageBodyAttributes.MESSAGE_ID]: messageId,

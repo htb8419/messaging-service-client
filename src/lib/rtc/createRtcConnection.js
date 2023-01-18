@@ -1,3 +1,6 @@
+import createAudioElement from "./createAudioElement";
+import removeAudioElement from "./removeAudioElement";
+
 const WEBRTC_ICE_CONFIGURATION = {
     "iceServers": [{"urls": "stun:turn.demisco.com:5349"},
         {
@@ -7,41 +10,16 @@ const WEBRTC_ICE_CONFIGURATION = {
         }]
 }
 const WEBRTC_MEDIA_STREAM_CONSTRAINTS = {
-    'video': false,
+    'video':false,
     'audio': {
         echoCancellation: true,
         noiseSuppression: true,
     }
 }
-const WEBRTC_AUDIO_ELEMENT_ID = "web-rtc-audio"
-
-const removeAudioElement = () => {
-    let audioElement = document.getElementById(WEBRTC_AUDIO_ELEMENT_ID)
-    if (audioElement) {
-        let stream = audioElement.srcObject
-        if (stream && stream.getTracks()) {
-            stream.getTracks().forEach(track => track.stop())
-            stream = null
-        }
-        audioElement.pause()
-        audioElement.srcObject = null
-        document.body.removeChild(audioElement)
-    }
-}
-const createAudioElement = () => {
-    removeAudioElement()
-    let audioElement = document.createElement('audio')
-    audioElement.setAttribute('id', WEBRTC_AUDIO_ELEMENT_ID)
-    audioElement.setAttribute('autoplay', 'true')
-    audioElement.setAttribute('controls', 'true')
-    audioElement.setAttribute('hidden', 'true')
-    document.body.appendChild(audioElement)
-    return audioElement
-}
 
 function createRtcConnection(onConnectionStateChange, onIceCandidate) {
     let rtcConnection = new RTCPeerConnection(WEBRTC_ICE_CONFIGURATION)
-
+    let audioElement = createAudioElement()
     const setUserMedia = (stream) => {
         rtcConnection.onicecandidate = ({candidate}) => {
             if (candidate) {
@@ -52,8 +30,9 @@ function createRtcConnection(onConnectionStateChange, onIceCandidate) {
             let mediaStream = new MediaStream()
             mediaStream.addTrack(track)
             audioElement.srcObject = mediaStream
+
         })
-        let audioElement = createAudioElement()
+        //document.getElementById('localVideo').srcObject = stream
         let mediaStreamTracks = stream.getAudioTracks();
         if (!mediaStreamTracks || mediaStreamTracks.length < 1) {
             throw new Error('call error')

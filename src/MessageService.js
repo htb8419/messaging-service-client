@@ -1,40 +1,38 @@
 import {CustomEventDispatcher, FileUploader, MessageBuilder} from "./lib"
 import MessageChanel from "./MessageChanel"
-import SocketConnection from "./SocketConnection"
+import SocketConnection from "./lib/SocketConnection"
 import MessagingEnums from "./model/MessagingEnums";
+import ApplicationConfig from "./ApplicationConfig";
 
 class MessageService {
-    static $WEB_RTC_EVENTS = ['OFFER', 'ANSWER', 'CANDIDATE', 'END_CALL'];
 
-    constructor(callback) {
+    constructor() {
+        let {callback} = ApplicationConfig.getConfig()
         this.callback = callback
         this.messageBuilder = new MessageBuilder();
-        CustomEventDispatcher.registerEventListener(MessagingEnums.ApplicationEvents.RECEIVED_MESSAGE, this.handleAppEvents)
-        CustomEventDispatcher.registerEventListener(MessagingEnums.ApplicationEvents.CONNECTION_STATE_CHANGE, this.handleAppEvents)
+        this.initial()
+    }
+
+    initial = () => {
         this.applicationEventMap = new Map();
         this.applicationEventMap.set("CONNECTION_STATE_CHANGE", MessagingEnums.ApplicationEvents.CONNECTION_STATE_CHANGE)
         this.applicationEventMap.set("RECEIVED_MESSAGE", MessagingEnums.ApplicationEvents.RECEIVED_MESSAGE)
         this.applicationEventMap.set("DELIVERY", MessagingEnums.ApplicationEvents.MESSAGE_DELIVERY)
         this.applicationEventMap.set("TYPING", MessagingEnums.ApplicationEvents.TYPING_STATE_CHANGE)
         this.applicationEventMap.set("PRESENCE", MessagingEnums.ApplicationEvents.PRESENCE_STATE_CHANGE)
-    }
 
-    getOnlineAgents = () => {
-        return Promise.resolve([{agentNickname: 'test', agentProfileImage: 'image'}]) //XhrRequest.GET("/onlineAgents")
+        CustomEventDispatcher.registerEventListener(MessagingEnums.ApplicationEvents.RECEIVED_MESSAGE, this.handleAppEvents)
+        CustomEventDispatcher.registerEventListener(MessagingEnums.ApplicationEvents.CONNECTION_STATE_CHANGE, this.handleAppEvents)
+        this.connect()
     }
 
     connect = () => {
         new SocketConnection().connect()
-
     }
     disconnect = () => {
-
     }
 
     buildEventMessage = (roomId, eventType, payload) => {
-        if (!roomId) {
-            throw new Error('roomId is null!')
-        }
         return this.messageBuilder.eventMessage(roomId, eventType, payload)
     }
     buildTextMessage = (roomId, text) => {
@@ -49,9 +47,16 @@ class MessageService {
         this.messageSender.send(message)
     }
 
-    //#-------------------- Handle Events --------------------#//
+    changeTypingState = (roomId, state) => {
+        if (MessagingEnums.typingState.hasOwnProperty(state)) {
+            this.buildEventMessage(roomId, MessagingEnums.EventMessageTypes.TYPING_STATE,
+                {state}).then(this.sendMessage)
+        }
+    }
+
+    //---------------------- Handle Events ---------------------------------------//
     handleAppEvents = ({type: eventType, detail}) => {
-        console.log('event : ',eventType," detail > ",detail)
+        console.log('event : ', eventType, " detail > ", detail)
         let appEventDetail = null;
 
         if (eventType === MessagingEnums.ApplicationEvents.CONNECTION_STATE_CHANGE) {
@@ -65,7 +70,6 @@ class MessageService {
             appEventDetail = message
             if (message.messageType === 'EVENT') {
                 if (message.state && MessagingEnums.webRtcEvents.hasOwnProperty(message.state)) {
-                    console.log('ignored process rtc events.')
                     return;
                 }
                 eventType = message.type
