@@ -1,22 +1,58 @@
+import {ApplicationErrors} from "./model";
+
+const DEFAULT_MESSAGING_SERVICE_OPTIONS = {
+    autoConnect: true,
+    messageVersion: 'V2',
+    connectionTimeout: 5000,
+    retryConnect: {
+        maxTryCount: 10,
+        reconnectDelay: 3000
+    },
+    webRtc: {
+        audioElementId: 'webrtc-audio',
+        localVideoElementId: 'localVideo',
+        remoteVideoElementId: 'remoteVideo',
+        serverConfiguration : {
+            "iceServers": [{"urls": "stun:turn.demisco.com:5349"},
+                {
+                    "urls": "turn:turn.demisco.com:5349",
+                    "credential": "turn",
+                    "username": "turn"
+                }]
+        }
+    }
+}
+
 class ApplicationConfig {
 
     static getConfig() {
         return window.$applicationConfig
     }
 
-    static createInstance(options) {
-        //todo validate required options properties
+    static verifyOptions = (options) => {
         if (!options) {
             throw new Error('invalid options')
         }
-        let {serverUrl} = options
+        let {serverUrl, callback} = options
+        if (!serverUrl || !callback) {
+            throw ApplicationErrors.INVALID_APP_OPTIONS
+        }
+    }
+
+    static createInstance(options) {
+        ApplicationConfig.verifyOptions(options)
+        let appOptions = {
+            ...DEFAULT_MESSAGING_SERVICE_OPTIONS,
+            ...options
+        }
+        let {serverUrl} = appOptions
         let wsAddress = serverUrl.startsWith("https://") ? serverUrl.replace('https://', 'wss://') : serverUrl.replace('http://', 'ws://')
         let socketUrl = `${wsAddress}/ws-adapter`
 
         window.$applicationConfig = {
             fileServiceUrl: 'http://192.168.103.34:9011/file',
             socketUrl,
-            ...options
+            ...appOptions
         }
         return window.$applicationConfig
     }

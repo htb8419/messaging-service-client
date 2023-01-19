@@ -1,4 +1,4 @@
-import WebRtc from "./lib/rtc/WebRtc";
+import WebRtcConnection from "./lib/rtc/WebRtcConnection";
 import {CustomEventDispatcher} from "./lib";
 import MessagingEnums from "./model/MessagingEnums";
 
@@ -8,15 +8,15 @@ class CommunicationService {
         this.messageService=messageService
         this.roomId=roomId
         CustomEventDispatcher.registerEventListener(MessagingEnums.ApplicationEvents.RECEIVED_MESSAGE, this.handleAppEvents)
-        this.webRtc = new WebRtc(this.sendEventMessage.bind(this))
-        //this.webRtc.initialRtcConnection()
+        this.webRtc = new WebRtcConnection(this.sendEventMessage.bind(this))
+
     }
 
-    call = () => {
+    makeCall = () => {
         this.webRtc.sendOffer()
     }
 
-    end = () => {
+    endCall = () => {
         this.webRtc.closeConnection()
     }
 

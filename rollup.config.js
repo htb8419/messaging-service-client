@@ -4,8 +4,8 @@ import babel from '@rollup/plugin-babel';
 import json from "@rollup/plugin-json";
 
 const extensions = ['.js', '.jsx', '.ts', '.tsx', ".json"];
-const development = !!process.env.ROLLUP_WATCH;
-console.log('rollup is development mode > ', development)
+const isDevelopment = !!process.env.ROLLUP_WATCH;
+console.log('rollup is development mod > ', isDevelopment)
 export default [
     {
         input: "src/index.js",
@@ -13,7 +13,7 @@ export default [
             {
                 file: 'dist/index.es.js',
                 format: "es",
-                sourcemap: development,
+                sourcemap: false,
             },
         ],
         plugins: [

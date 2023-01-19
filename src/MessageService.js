@@ -14,15 +14,18 @@ class MessageService {
     }
 
     initial = () => {
-        this.applicationEventMap = new Map();
-        this.applicationEventMap.set("CONNECTION_STATE_CHANGE", MessagingEnums.ApplicationEvents.CONNECTION_STATE_CHANGE)
-        this.applicationEventMap.set("RECEIVED_MESSAGE", MessagingEnums.ApplicationEvents.RECEIVED_MESSAGE)
-        this.applicationEventMap.set("DELIVERY", MessagingEnums.ApplicationEvents.MESSAGE_DELIVERY)
-        this.applicationEventMap.set("TYPING", MessagingEnums.ApplicationEvents.TYPING_STATE_CHANGE)
-        this.applicationEventMap.set("PRESENCE", MessagingEnums.ApplicationEvents.PRESENCE_STATE_CHANGE)
+        let applicationEvents = MessagingEnums.ApplicationEvents;
 
-        CustomEventDispatcher.registerEventListener(MessagingEnums.ApplicationEvents.RECEIVED_MESSAGE, this.handleAppEvents)
-        CustomEventDispatcher.registerEventListener(MessagingEnums.ApplicationEvents.CONNECTION_STATE_CHANGE, this.handleAppEvents)
+        this.applicationEventMap = new Map();
+        this.applicationEventMap.set("CONNECTION_STATE_CHANGE", applicationEvents.CONNECTION_STATE_CHANGE)
+        this.applicationEventMap.set("RECEIVED_MESSAGE", applicationEvents.RECEIVED_MESSAGE)
+        this.applicationEventMap.set("DELIVERY", applicationEvents.MESSAGE_DELIVERY)
+        this.applicationEventMap.set("TYPING", applicationEvents.TYPING_STATE_CHANGE)
+        this.applicationEventMap.set("PRESENCE", applicationEvents.PRESENCE_STATE_CHANGE)
+
+        CustomEventDispatcher.registerEventListener(applicationEvents.RECEIVED_MESSAGE, this.handleAppEvents)
+        CustomEventDispatcher.registerEventListener(applicationEvents.CONNECTION_STATE_CHANGE, this.handleAppEvents)
+        CustomEventDispatcher.registerEventListener(applicationEvents.THROW_EXCEPTION, this.handleAppEvents)
         this.connect()
     }
 

@@ -1,10 +1,12 @@
 import ApplicationConfig from "../../ApplicationConfig";
-import removeAudioElement from "./removeAudioElement";
 
 const createAudioElement = () => {
     let {audioElementId}=ApplicationConfig.getConfig()
-    removeAudioElement()
-    let audioElement = document.createElement('audio')
+    let audioElement = document.getElementById(audioElementId)
+    if (audioElement) {
+        return audioElement
+    }
+    audioElement = document.createElement('audio')
     audioElement.setAttribute('id', audioElementId)
     audioElement.setAttribute('autoplay', 'true')
     audioElement.setAttribute('controls', 'true')
