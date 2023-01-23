@@ -17,10 +17,11 @@ class WebRtcConnection {
         if (this.rtcConnection) {
             return this.rtcConnection
         }
-
         let {webRtc} = ApplicationConfig.getConfig()
         let rtcConnection = new RTCPeerConnection(webRtc.serverConfiguration)
         let mediaStreamConstraints = await this.getMediaStreamConstraints()
+
+        console.log('mediaStreamConstraints >>>', mediaStreamConstraints)
         await initUserMediaDevices(rtcConnection, mediaStreamConstraints)
 
         rtcConnection.addEventListener('icecandidate', this.sendCandidate)
@@ -57,20 +58,20 @@ class WebRtcConnection {
 
     onRTCIceCandidate(iceCandidate) {
         if (iceCandidate && this.rtcConnection && this.rtcConnection.currentRemoteDescription) {
-            this.rtcConnection.addIceCandidate(new RTCIceCandidate(iceCandidate)).catch(this.handleError)
+            this.rtcConnection.addIceCandidate(iceCandidate).catch(this.handleError)
         }
     }
 
     closeConnection = (force = false) => {
         console.log('closeRtcPeerConnection  >> ', new Date())
         if (this.rtcConnection) {
-            let localVideo = document.querySelector('video#localVideo');
-            localVideo.pause()
-            localVideo.srcObject=null
-            let remoteVideo = document.querySelector('video#remoteVideo');
-            remoteVideo.pause()
-            remoteVideo.srcObject=null
-
+            /*   let localVideo = document.querySelector('video#localVideo');
+               localVideo.pause()
+               localVideo.srcObject = null
+               let remoteVideo = document.querySelector('video#remoteVideo');
+               remoteVideo.pause()
+               remoteVideo.srcObject = null*/
+            //removeAudioElement()
             this.rtcConnection.close()
             this.rtcConnection = null;
         }
@@ -81,24 +82,21 @@ class WebRtcConnection {
     getMediaStreamConstraints = async () => {
         return getMediaStreamConstraints({
             'video': {
-                width: { min: 600, ideal: 1280, max: 1920 },
-                height: { min: 400, ideal: 720, max: 1080 }
+                width: {min: 256, ideal: 1280, max: 1920},
+                height: {min:144 , ideal: 720, max: 1080}
             },
             'audio': {
                 echoCancellation: true,
                 noiseSuppression: true,
+                sampleRate: 44100,
+                suppressLocalAudioPlayback: true
             }
         });
     }
-    pauseCamera=(cameraId)=>{
-        document.querySelector('video#localVideo').pause()
-    }
-    resumeCamera=(cameraId)=>{
-        document.querySelector('video#localVideo').resume()
-    }
+
     onConnectionStateChange = (event) => {
         //TODO handle connectionStateChange
-        console.log('WebRTC onconnectionstatechange', event,this.rtcConnection.connectionState)
+        console.log('WebRTC onconnectionstatechange', event, this.rtcConnection.connectionState)
         switch (this.rtcConnection.connectionState) {
             case "connected":
                 break;
@@ -115,7 +113,7 @@ class WebRtcConnection {
     }
 
     handleError = error => {
-        console.log('WebRTC errrrrrrrrrror > ',error)
+        console.log('WebRTC errrrrrrrrrror > ', error)
         let errorMessage;
         if (error.name) {
             errorMessage = error.name

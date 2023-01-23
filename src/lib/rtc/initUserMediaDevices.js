@@ -10,7 +10,7 @@ const getWebRtcHtmlElements = (mediaStreamConstraints) => {
         }
     }
     if ('audio' in mediaStreamConstraints) {
-        let audioElement = document.querySelector('audio#webrtc-audio')
+        let audioElement = document.querySelector('audio#localAudio')
         if (audioElement) {
             htmlElements.push(audioElement)
         }
@@ -26,7 +26,6 @@ const initUserMediaDevices = async (rtcConnection, mediaStreamConstraints) => {
         if (!mediaStreamTracks || mediaStreamTracks.length < 1) {
             return Promise.reject(new Error('userMedia is empty'))
         }
-
         let htmlElements = getWebRtcHtmlElements(mediaStreamConstraints)
         htmlElements.forEach(element => element.srcObject = userMediaStream)
 
@@ -44,6 +43,7 @@ const initUserMediaDevices = async (rtcConnection, mediaStreamConstraints) => {
             })
             rtcRtpSender.forEach(rtcConnection.removeTrack)
         })
+        return userMediaStream
     } catch (ex) {
         console.error('Error accessing media devices.', ex);
         CustomEventDispatcher.dispatchEvent(MessagingEnums.ApplicationEvents.THROW_EXCEPTION, {error: ApplicationErrors.ERROR_ON_ACCESSING_MEDIA_DEVICES})

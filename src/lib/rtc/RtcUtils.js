@@ -13,8 +13,8 @@ function existsConnectedDevices(type) {
 }
 
 async function getMediaStreamConstraints(requestMediaStreamConstraint) {
-    if ('video' in requestMediaStreamConstraint) {
-        let existsDevice =await existsConnectedDevices('videoinput');
+    if ('video' in requestMediaStreamConstraint && requestMediaStreamConstraint.video !== false) {
+        let existsDevice = await existsConnectedDevices('videoinput');
         if (!existsDevice) {
             requestMediaStreamConstraint.video = false
         }

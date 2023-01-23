@@ -1,4 +1,5 @@
 import ApplicationConfig from "../ApplicationConfig";
+import SecurityContextHolder from "./SecurityContextHolder";
 
 class FileUploader {
     static upload(file) {
@@ -11,7 +12,9 @@ class FileUploader {
         if (!mimeType || mimeType === '') {
             mimeType = "text/plain"
         }
-        let {accessToken,fileServiceUrl} = ApplicationConfig.getConfig()
+        let {fileServiceUrl} = ApplicationConfig.getConfig()
+        let {accessToken} =SecurityContextHolder.getCurrentContext()
+
         return fetch(fileServiceUrl, {
             method: 'POST',
             body: data,
@@ -21,11 +24,6 @@ class FileUploader {
         }).then(response => response.json()).then(response => response.result.fileId).then(fileId => {
             return {fileId, name, mimeType, size}
         })
-        //return Promise.resolve({fileId:'testFileId', name, mimeType, size})
-        /*  return XhrRequest.POST("/file", data).then(fileId => {
-              return {fileId, fileName, fileMimeType, fileSize}
-          })*/
-
     }
 }
 

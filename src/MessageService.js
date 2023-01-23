@@ -61,14 +61,7 @@ class MessageService {
     handleAppEvents = ({type: eventType, detail}) => {
         console.log('event : ', eventType, " detail > ", detail)
         let appEventDetail = null;
-
-        if (eventType === MessagingEnums.ApplicationEvents.CONNECTION_STATE_CHANGE) {
-            let {stompClient, connected, state} = detail
-            if (stompClient && connected) {
-                this.messageSender = new MessageChanel(stompClient)
-            }
-            appEventDetail = {connected, state}
-        } else if (eventType === MessagingEnums.ApplicationEvents.RECEIVED_MESSAGE) {
+        if (eventType === MessagingEnums.ApplicationEvents.RECEIVED_MESSAGE) {
             let {message} = detail;
             appEventDetail = message
             if (message.messageType === 'EVENT') {
@@ -77,6 +70,14 @@ class MessageService {
                 }
                 eventType = message.type
             }
+        } else if (eventType === MessagingEnums.ApplicationEvents.CONNECTION_STATE_CHANGE) {
+            let {stompClient, connected, state} = detail
+            if (stompClient && connected) {
+                this.messageSender = new MessageChanel(stompClient)
+            }
+            appEventDetail = {connected, state}
+        } else if (eventType === MessagingEnums.ApplicationEvents.THROW_EXCEPTION) {
+            appEventDetail = detail
         }
         let applicationEvent = this.applicationEventMap.get(eventType)
         if (applicationEvent && appEventDetail) {

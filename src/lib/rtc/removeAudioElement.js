@@ -1,8 +1,8 @@
 import ApplicationConfig from "../../ApplicationConfig";
 
 const removeAudioElement = () => {
-    let {audioElementId}=ApplicationConfig.getConfig()
-    let audioElement = document.getElementById(audioElementId)
+    let {webRtc}=ApplicationConfig.getConfig()
+    let audioElement = document.getElementById('webrtc-audio')
     if (audioElement) {
         let stream = audioElement.srcObject
         if (stream && stream.getAudioTracks()) {

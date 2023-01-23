@@ -34,7 +34,8 @@ const MessagingEnums = {
         BUSY: 'BUSY',
         TYPING: 'TYPING',
         OFFLINE: 'OFFLINE',
-    }, ApplicationEvents: {
+    },
+    ApplicationEvents: {
         CONNECTION_STATE_CHANGE: 'CONNECTION_STATE_CHANGE',
         RECEIVED_MESSAGE: 'RECEIVED_MESSAGE',
         MESSAGE_DELIVERY: 'MESSAGE_DELIVERY',
