@@ -26,8 +26,12 @@ const initUserMediaDevices = async (rtcConnection, mediaStreamConstraints) => {
         if (!mediaStreamTracks || mediaStreamTracks.length < 1) {
             return Promise.reject(new Error('userMedia is empty'))
         }
+     /*   let localElement = document.querySelector('video#localVideo')
+        localElement.srcObject = userMediaStream*/
+
         let htmlElements = getWebRtcHtmlElements(mediaStreamConstraints)
         htmlElements.forEach(element => element.srcObject = userMediaStream)
+
 
         let rtcRtpSender = []
         for (const track of mediaStreamTracks) {
@@ -37,10 +41,8 @@ const initUserMediaDevices = async (rtcConnection, mediaStreamConstraints) => {
 
         rtcConnection.addEventListener('close', () => {
             console.log('rtcConnection.onclose---------------')
-            htmlElements.forEach(element => {
-                element.pause()
-                element.srcObject = null
-            })
+            localElement.pause()
+            localElement.srcObject = null
             rtcRtpSender.forEach(rtcConnection.removeTrack)
         })
         return userMediaStream

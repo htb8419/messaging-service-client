@@ -4,6 +4,19 @@ import handleRTCTrackEvent from "./handleRTCTrackEvent";
 import ApplicationConfig from "../../ApplicationConfig";
 import {getMediaStreamConstraints} from './RtcUtils'
 
+const _DEFAULT_WEBRTC_MEDIA_CONSTRAINT = {
+
+    'audio': {
+        echoCancellation: true,
+        noiseSuppression: true,
+        sampleRate: 24000,
+        suppressLocalAudioPlayback: true
+    },
+    selfBrowserSurface: "exclude",
+    systemAudio: "exclude"
+
+}
+
 class WebRtcConnection {
 
     constructor(sendEventMessage) {
@@ -18,19 +31,27 @@ class WebRtcConnection {
             return this.rtcConnection
         }
         let {webRtc} = ApplicationConfig.getConfig()
-        let rtcConnection = new RTCPeerConnection(webRtc.serverConfiguration)
+        this.rtcConnection = new RTCPeerConnection(webRtc.serverConfiguration)
+
         let mediaStreamConstraints = await this.getMediaStreamConstraints()
 
         console.log('mediaStreamConstraints >>>', mediaStreamConstraints)
-        await initUserMediaDevices(rtcConnection, mediaStreamConstraints)
+        await initUserMediaDevices(this.rtcConnection, mediaStreamConstraints)
 
-        rtcConnection.addEventListener('icecandidate', this.sendCandidate)
-        rtcConnection.addEventListener('connectionstatechange', this.onConnectionStateChange)
-        rtcConnection.addEventListener('track', handleRTCTrackEvent)
-        rtcConnection.addEventListener('close', () => {
+        this.rtcConnection.addEventListener('icecandidate', this.sendCandidate)
+        this.rtcConnection.addEventListener('connectionstatechange', this.onConnectionStateChange)
+        this.rtcConnection.addEventListener('iceconnectionstatechange',this.onIceConnectionStateChange.bind(this))
+        this.rtcConnection.addEventListener('track', handleRTCTrackEvent)
+        this.rtcConnection.addEventListener('close', () => {
             console.log('rtcConnection.onclose---------------')
         })
-        this.rtcConnection = rtcConnection
+    }
+    onIceConnectionStateChange = (event) => {
+        let iceConnectionState = this.rtcConnection.iceConnectionState;
+        console.log('event.iceconnectionstatechange >>>', iceConnectionState, ' event:', event,)
+        if (iceConnectionState === 'disconnected' || iceConnectionState === 'failed') {
+            this.closeConnection()
+        }
     }
     sendOffer = () => {
         this.rtcConnection.createOffer({iceRestart: true}).then(offer => {
@@ -65,33 +86,21 @@ class WebRtcConnection {
     closeConnection = (force = false) => {
         console.log('closeRtcPeerConnection  >> ', new Date())
         if (this.rtcConnection) {
-            /*   let localVideo = document.querySelector('video#localVideo');
-               localVideo.pause()
-               localVideo.srcObject = null
-               let remoteVideo = document.querySelector('video#remoteVideo');
-               remoteVideo.pause()
-               remoteVideo.srcObject = null*/
-            //removeAudioElement()
             this.rtcConnection.close()
-            this.rtcConnection = null;
+            let localVideo = document.querySelector('video#localVideo');
+            localVideo.pause()
+            localVideo.srcObject = null
+            let remoteVideo = document.querySelector('video#remoteVideo');
+            remoteVideo.pause()
+            remoteVideo.srcObject = null
+            //this.rtcConnection = null;
         }
         if (!force) {
 
         }
     }
     getMediaStreamConstraints = async () => {
-        return getMediaStreamConstraints({
-            'video': {
-                width: {min: 256, ideal: 1280, max: 1920},
-                height: {min:144 , ideal: 720, max: 1080}
-            },
-            'audio': {
-                echoCancellation: true,
-                noiseSuppression: true,
-                sampleRate: 44100,
-                suppressLocalAudioPlayback: true
-            }
-        });
+        return getMediaStreamConstraints(_DEFAULT_WEBRTC_MEDIA_CONSTRAINT);
     }
 
     onConnectionStateChange = (event) => {
@@ -104,7 +113,7 @@ class WebRtcConnection {
                 this.closeConnection(true)
                 break;
             case "failed":
-                his.closeConnection(true)
+                this.closeConnection(true)
                 break;
             case "closed":
                 // window.chatService.endCall()

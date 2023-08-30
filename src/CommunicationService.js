@@ -30,7 +30,6 @@ class CommunicationService {
      * Handle Events
      * */
     handleAppEvents = ({type: eventType, detail}) => {
-        console.log('received rct events > ', eventType, {...detail})
         if (eventType === MessagingEnums.ApplicationEvents.CONNECTION_STATE_CHANGE) {
             let {connected} = detail
             if (connected) {

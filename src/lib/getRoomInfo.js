@@ -1,26 +1,31 @@
 import SecurityContextHolder from './SecurityContextHolder'
 import ApplicationConfig from "../ApplicationConfig";
 
-function getRoomInfo(meetingCode) {
-    const __TEMP_DEV_ROOM_INFO = {
-        roomId: '633a7675685d7b6a6d08fdbc',
-        welcomeMessage: 'hello',
-        agentNickname: 'agent',
-        agentProfileImage: 'image'
-    }
-
-    const {serverUrl}=ApplicationConfig.getConfig()
-    return fetch(`${serverUrl}/room/roomInfo/${meetingCode}`)
+function getRoomInfo(roomCode) {
+    const {serverUrl} = ApplicationConfig.getConfig()
+    return fetch(`${serverUrl}/room/roomInfo/${roomCode}`)
         .then(response => response.json())
         .then(responseJson => {
-            return responseJson.result
+            let {result, payload, messages: errors} = responseJson
+            if (result) {
+                return result
+            }
+            if (errors && errors.length > 0) {
+                let error = errors[0]
+                if (error.code === 'NO_LINK_FOUND') {
+                    let {callback} = ApplicationConfig.getConfig();
+                    //callback(MessagingEnums.ApplicationEvents.THROW_EXCEPTION,error)
+                    throw new Error('INVALID_ROOM_CODE')
+                }
+            }
+            return payload
         }).then(roomInfo => {
+            if (!roomInfo) {
+                return roomInfo
+            }
+            window.$roomInfo=roomInfo
             SecurityContextHolder.initialContext(roomInfo['currentParticipant']['token'])
             return roomInfo
-        })
-        .catch(ex => {
-            console.error('getRoomInfo >', ex)
-            //alert('server error')
         })
 }
 

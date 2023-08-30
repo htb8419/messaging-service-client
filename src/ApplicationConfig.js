@@ -1,6 +1,6 @@
 import {ApplicationErrors} from "./model";
 
-const DEFAULT_MESSAGING_SERVICE_OPTIONS = {
+const _DEFAULT_MESSAGING_SERVICE_OPTIONS = {
     autoConnect: true,
     messageVersion: 'V2',
     connectionTimeout: 5000,
@@ -12,7 +12,7 @@ const DEFAULT_MESSAGING_SERVICE_OPTIONS = {
         audioElementId: 'webrtc-audio',
         localVideoElementId: 'localVideo',
         remoteVideoElementId: 'remoteVideo',
-        serverConfiguration : {
+        serverConfiguration: {
             "iceServers": [{"urls": "stun:turn.demisco.com:5349"},
                 {
                     "urls": "turn:turn.demisco.com:5349",
@@ -41,16 +41,13 @@ class ApplicationConfig {
 
     static createInstance(options) {
         ApplicationConfig.verifyOptions(options)
-        let appOptions = {
-            ...DEFAULT_MESSAGING_SERVICE_OPTIONS,
-            ...options
-        }
+        let appOptions = Object.assign(_DEFAULT_MESSAGING_SERVICE_OPTIONS, options)
         let {serverUrl} = appOptions
         let wsAddress = serverUrl.startsWith("https://") ? serverUrl.replace('https://', 'wss://') : serverUrl.replace('http://', 'ws://')
         let socketUrl = `${wsAddress}/ws-adapter`
 
         window.$applicationConfig = {
-            fileServiceUrl: 'http://192.168.103.34:9011/file',
+            fileServiceUrl: `${serverUrl}/fs/file`,
             socketUrl,
             ...appOptions
         }

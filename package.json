@@ -1,6 +1,6 @@
 {
-  "name": "messaging-service-client",
-  "version": "1.1.0-beta.12",
+  "name": "@dms-im/messaging-service",
+  "version": "1.1.0-beta.2308301230",
   "description": "",
   "type": "module",
   "module": "./dist/index.es.js",
@@ -8,7 +8,7 @@
   "author": "",
   "license": "ISC",
   "browserslist": [
-    ">0.2% or last 5 version,not dead,not IE 11,not op_mini all"
+    ">.25% or last 5 versions,not dead,not IE 11,not op_mini all"
   ],
   "files": [
     "dist"
@@ -17,7 +17,7 @@
     "create-npm-link": "npm link",
     "build&watch": "rollup -c --watch",
     "build": "rollup -c --format es",
-    "publish": "npm publish --access public"
+    "publish": "npm publish --log-level=debug"
   },
   "devDependencies": {
     "@babel/plugin-transform-arrow-functions": "^7.20.7",

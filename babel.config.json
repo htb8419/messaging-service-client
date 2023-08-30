@@ -3,21 +3,17 @@
     [
       "@babel/preset-env",
       {
-        "modules": false,
+        "modules": "auto",
         "debug": true,
         "useBuiltIns": false,
-        "targets": {
-          "esmodules": true
-        }
+        "targets": [
+          "last 10 Chrome versions",
+          "last 10 Firefox versions",
+          "last 10 Edge versions",
+          "last 10 Safari versions",
+          "last 10 iOS versions"
+        ]
       }
-    ],
-    ["@babel/preset-typescript",{
-
-    }]
-  ],
-  "plugins": [
-    "@babel/plugin-transform-arrow-functions",
-    "@babel/proposal-class-properties",
-    "@babel/proposal-object-rest-spread"
+    ]
   ]
 }

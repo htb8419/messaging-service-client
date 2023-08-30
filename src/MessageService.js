@@ -56,7 +56,10 @@ class MessageService {
                 {state}).then(this.sendMessage)
         }
     }
-
+    changePresenceState = (roomId, presence) => {
+        this.buildEventMessage(roomId, MessagingEnums.EventMessageTypes.CHANGE_PRESENCE_STATUS, {presence})
+            .then(this.sendMessage)
+    }
     //---------------------- Handle Events ---------------------------------------//
     handleAppEvents = ({type: eventType, detail}) => {
         console.log('event : ', eventType, " detail > ", detail)
@@ -74,6 +77,7 @@ class MessageService {
             let {stompClient, connected, state} = detail
             if (stompClient && connected) {
                 this.messageSender = new MessageChanel(stompClient)
+                this.changePresenceState(window.$roomInfo.roomId,{state:MessagingEnums.UserPresenceState.ONLINE})
             }
             appEventDetail = {connected, state}
         } else if (eventType === MessagingEnums.ApplicationEvents.THROW_EXCEPTION) {
