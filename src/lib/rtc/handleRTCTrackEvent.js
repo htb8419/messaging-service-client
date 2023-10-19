@@ -1,4 +1,5 @@
-function handleRTCTrackEvent({streams, track}) {
+function handleRTCTrackEvent(event) {
+    let {streams, track}=event
     console.log('handleRTCTrackEvent >>> ', track.kind,', streams >>',streams)
     if (streams && streams[0]) {
         streams.forEach(stream=>{
@@ -9,7 +10,6 @@ function handleRTCTrackEvent({streams, track}) {
             }
         })
         //document.querySelector('video#remoteVideo').srcObject = streams[0]
-
     }
 }
 

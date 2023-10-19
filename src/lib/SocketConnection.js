@@ -11,7 +11,7 @@ class SocketConnection {
         this.stompClient = this.createClientOverSocket();
         this.stompClient.beforeConnect = () => {
             let {retryConnect: {maxTryCount}} = ApplicationConfig.getConfig();
-            console.log('tryCount :', this.tryCount, ' maxTryCount :', maxTryCount)
+            Logger.getLogger()('tryCount :', this.tryCount, ' maxTryCount :', maxTryCount)
             if (this.tryCount === maxTryCount) {
                 this.connectFailed()
             } else {
@@ -58,26 +58,13 @@ class SocketConnection {
         return new StompClient({
             brokerURL: socketAddress,
             debug: function (msg) {
-                Logger.debug.bind('$stomp > ', msg)
+                Logger.getLogger()('$stomp ', msg)
             },
             connectionTimeout: connectionTimeout,
             reconnectDelay: retryConnect.reconnectDelay,
             heartbeatIncoming: 2000,
             heartbeatOutgoing: 2000,
         })
-    }
-
-    createClientOverSockjs = () => {
-        return null //temp
-        /*  const Sockjs = require('sockjs-client')
-          const Stomp = require('stompjs')
-          let {serverUrl, accessToken, sessionId} = ApplicationConfig.getConfig();
-          let ws = new Sockjs(`${serverUrl}/websocket?access_token=${accessToken}`, [], {
-              transports: ["websocket"],
-              timeout: 5000,
-              sessionId: () => sessionId
-          });
-          return Stomp.over(ws);*/
     }
 }
 

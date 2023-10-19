@@ -5,7 +5,7 @@ import ApplicationConfig from "../../ApplicationConfig";
 import {getMediaStreamConstraints} from './RtcUtils'
 
 const _DEFAULT_WEBRTC_MEDIA_CONSTRAINT = {
-
+    'video': true,
     'audio': {
         echoCancellation: true,
         noiseSuppression: true,
@@ -14,7 +14,6 @@ const _DEFAULT_WEBRTC_MEDIA_CONSTRAINT = {
     },
     selfBrowserSurface: "exclude",
     systemAudio: "exclude"
-
 }
 
 class WebRtcConnection {
@@ -22,31 +21,27 @@ class WebRtcConnection {
     constructor(sendEventMessage) {
         this.sendEventMessage = sendEventMessage
         this.rtcConnection = null
-        this.initialRtcConnection()
     }
 
     initialRtcConnection = async () => {
         // closeRtcPeerConnection(true)
-        if (this.rtcConnection) {
-            return this.rtcConnection
-        }
+        this.logConnectionState('initialRtcConnection')
         let {webRtc} = ApplicationConfig.getConfig()
         this.rtcConnection = new RTCPeerConnection(webRtc.serverConfiguration)
-
         let mediaStreamConstraints = await this.getMediaStreamConstraints()
-
-        console.log('mediaStreamConstraints >>>', mediaStreamConstraints)
         await initUserMediaDevices(this.rtcConnection, mediaStreamConstraints)
 
         this.rtcConnection.addEventListener('icecandidate', this.sendCandidate)
         this.rtcConnection.addEventListener('connectionstatechange', this.onConnectionStateChange)
-        this.rtcConnection.addEventListener('iceconnectionstatechange',this.onIceConnectionStateChange.bind(this))
+        this.rtcConnection.addEventListener('iceconnectionstatechange', this.onIceConnectionStateChange)
         this.rtcConnection.addEventListener('track', handleRTCTrackEvent)
         this.rtcConnection.addEventListener('close', () => {
-            console.log('rtcConnection.onclose---------------')
+            this.logConnectionState('rtcConnection.onclose')
         })
+        return this
     }
     onIceConnectionStateChange = (event) => {
+        this.logConnectionState('onIceConnectionStateChange')
         let iceConnectionState = this.rtcConnection.iceConnectionState;
         console.log('event.iceconnectionstatechange >>>', iceConnectionState, ' event:', event,)
         if (iceConnectionState === 'disconnected' || iceConnectionState === 'failed') {
@@ -54,46 +49,61 @@ class WebRtcConnection {
         }
     }
     sendOffer = () => {
+        this.logConnectionState('sendOffer')
+        if (this.getConnectionState() !== 'new') {
+            return
+        }
         this.rtcConnection.createOffer({iceRestart: true}).then(offer => {
             this.rtcConnection.setLocalDescription(offer)
             this.sendEventMessage(MessagingEnums.webRtcEvents.OFFER, offer)
         }).catch(this.handleError)
     }
     sendCandidate = ({candidate}) => {
+        this.logConnectionState('sendCandidate')
         if (candidate) {
             this.sendEventMessage(MessagingEnums.webRtcEvents.CANDIDATE, candidate)
         }
     }
     onOffer = (offer) => {
+        this.logConnectionState('onOffer')
+        if (this.getConnectionState() !== 'new') {
+            return
+        }
         this.rtcConnection.setRemoteDescription(new RTCSessionDescription(offer))
             .then(() => {
                 this.rtcConnection.createAnswer((answer) => {
+                    this.logConnectionState('createAnswer')
                     this.rtcConnection.setLocalDescription(answer)
                     this.sendEventMessage(MessagingEnums.webRtcEvents.ANSWER, answer)
                 }, this.handleError)
             }).catch(this.handleError)
     }
     onAnswer = (answer) => {
+        this.logConnectionState('onAnswer')
         this.rtcConnection.setRemoteDescription(new RTCSessionDescription(answer))
     }
 
     onRTCIceCandidate(iceCandidate) {
+        this.logConnectionState('onRTCIceCandidate')
         if (iceCandidate && this.rtcConnection && this.rtcConnection.currentRemoteDescription) {
             this.rtcConnection.addIceCandidate(iceCandidate).catch(this.handleError)
         }
     }
 
     closeConnection = (force = false) => {
-        console.log('closeRtcPeerConnection  >> ', new Date())
+        this.logConnectionState('closeRtcPeerConnection')
         if (this.rtcConnection) {
             this.rtcConnection.close()
-            let localVideo = document.querySelector('video#localVideo');
-            localVideo.pause()
-            localVideo.srcObject = null
-            let remoteVideo = document.querySelector('video#remoteVideo');
-            remoteVideo.pause()
-            remoteVideo.srcObject = null
-            //this.rtcConnection = null;
+            WEB_RTC_HTML_ELEMENTS.forEach(elementId => {
+                let element = document.querySelector(elementId)
+                element.pause()
+                if (element.srcObject && element.srcObject.getTracks) {
+                    element.srcObject.getTracks().forEach(track => track && track.stop())
+                }
+                element.srcObject = null
+            })
+            window.lastCallingTime = Date.now()
+            console.debug('the rtcConnection closed')
         }
         if (!force) {
 
@@ -105,8 +115,10 @@ class WebRtcConnection {
 
     onConnectionStateChange = (event) => {
         //TODO handle connectionStateChange
-        console.log('WebRTC onconnectionstatechange', event, this.rtcConnection.connectionState)
+        this.logConnectionState('onConnectionStateChange')
         switch (this.rtcConnection.connectionState) {
+            case "connecting":
+                break;
             case "connected":
                 break;
             case "disconnected":
@@ -122,7 +134,8 @@ class WebRtcConnection {
     }
 
     handleError = error => {
-        console.log('WebRTC errrrrrrrrrror > ', error)
+        console.log('WebRTC err > ', error)
+        this.logConnectionState('onRtcConnectionError')
         let errorMessage;
         if (error.name) {
             errorMessage = error.name
@@ -136,6 +149,24 @@ class WebRtcConnection {
         //Todo notify(errorMessage, 'error');
         //throw error
     }
+    isClosedConnectionState = () => {
+        let connectionState = this.getConnectionState();
+        return connectionState === 'closed' || connectionState === 'failed'
+    }
+    isOpenConnectionState = () => {
+        let connectionState = this.getConnectionState();
+        return connectionState === 'connected' || connectionState === 'connecting'
+    }
+    getConnectionState = () => {
+        if (!this.rtcConnection) {
+            return 'closed'
+        }
+        return this.rtcConnection.connectionState
+    }
+    logConnectionState = (method = 'm') => {
+        ///window.getLogger()(`${method}, rtcConnectionState [${this.getConnectionState()}]`)
+    }
 }
 
+const WEB_RTC_HTML_ELEMENTS = ['video#remoteVideo', 'audio#remoteAudio', 'video#localVideo', 'audio#localAudio',]
 export default WebRtcConnection

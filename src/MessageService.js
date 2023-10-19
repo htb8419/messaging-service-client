@@ -77,7 +77,7 @@ class MessageService {
             let {stompClient, connected, state} = detail
             if (stompClient && connected) {
                 this.messageSender = new MessageChanel(stompClient)
-                this.changePresenceState(window.$roomInfo.roomId,{state:MessagingEnums.UserPresenceState.ONLINE})
+                this.changePresenceState(window.$roomInfo.roomId,MessagingEnums.UserPresenceState.ONLINE)
             }
             appEventDetail = {connected, state}
         } else if (eventType === MessagingEnums.ApplicationEvents.THROW_EXCEPTION) {

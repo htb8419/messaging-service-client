@@ -38,13 +38,6 @@ const initUserMediaDevices = async (rtcConnection, mediaStreamConstraints) => {
             let ref = rtcConnection.addTrack(track, userMediaStream)
             rtcRtpSender.push(ref)
         }
-
-        rtcConnection.addEventListener('close', () => {
-            console.log('rtcConnection.onclose---------------')
-            localElement.pause()
-            localElement.srcObject = null
-            rtcRtpSender.forEach(rtcConnection.removeTrack)
-        })
         return userMediaStream
     } catch (ex) {
         console.error('Error accessing media devices.', ex);

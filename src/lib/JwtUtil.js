@@ -1,15 +1,11 @@
 class JwtUtil {
     static getSessionId(accessToken) {
-        let userInfo = JwtUtil.getUserInfo(accessToken)
-        let {additionalInformation} = userInfo
-        return (additionalInformation && additionalInformation['SID']) ?
-            additionalInformation['SID'] :
-            JwtUtil.getUsername(accessToken);
+        return JwtUtil.getUsername(accessToken);
     }
 
     static getUsername(accessToken) {
         let userInfo = JwtUtil.getUserInfo(accessToken)
-        return userInfo['username'];
+        return  userInfo['user_name'];
     }
 
     static getUserInfo(accessToken) {

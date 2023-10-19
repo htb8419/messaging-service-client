@@ -1,26 +1,39 @@
 import WebRtcConnection from "./lib/rtc/WebRtcConnection";
 import {CustomEventDispatcher} from "./lib";
 import MessagingEnums from "./model/MessagingEnums";
+import sleep from "./lib/sleep.js";
 
 class CommunicationService {
 
     constructor(messageService, roomId) {
-        this.messageService=messageService
-        this.roomId=roomId
+        this.messageService = messageService
+        this.roomId = roomId
+        CustomEventDispatcher.registerEventListener(MessagingEnums.ApplicationEvents.CONNECTION_STATE_CHANGE, this.handleAppEvents)
         CustomEventDispatcher.registerEventListener(MessagingEnums.ApplicationEvents.RECEIVED_MESSAGE, this.handleAppEvents)
-        this.webRtc = new WebRtcConnection(this.sendEventMessage.bind(this))
-
+        this.webRtc = null;
     }
 
     makeCall = () => {
-        this.webRtc.sendOffer()
+        this.getWebRtc().then((webRtc) => {
+            let delayCall = this.calcDelayCall();
+            sleep(delayCall).then(() => webRtc.sendOffer())
+        })
+    }
+
+    calcDelayCall = () => {
+        const WAITING_NEXT_CALL = 6000
+        let delayToCall = 0, diff = 0;
+        if (window.lastCallingTime && (diff = Date.now() - window.lastCallingTime) < WAITING_NEXT_CALL) {
+            delayToCall = WAITING_NEXT_CALL - diff
+        }
+        return delayToCall;
     }
 
     endCall = () => {
-        this.webRtc.closeConnection()
+        this.getWebRtc().then(webRtc => webRtc.closeConnection())
     }
 
-    sendEventMessage=(state, rtcObject)=> {
+    sendEventMessage = (state, rtcObject) => {
         this.messageService.buildEventMessage(this.roomId, 'WRTC', {
             state,
             rtcObject
@@ -33,7 +46,6 @@ class CommunicationService {
         if (eventType === MessagingEnums.ApplicationEvents.CONNECTION_STATE_CHANGE) {
             let {connected} = detail
             if (connected) {
-                this.webRtcConnection.initialRtcConnection()
             }
         } else if (eventType === MessagingEnums.ApplicationEvents.RECEIVED_MESSAGE) {
             let {message} = detail
@@ -47,17 +59,29 @@ class CommunicationService {
     handleRtcEvents = (eventType, rtcObject) => {
         switch (eventType) {
             case MessagingEnums.webRtcEvents.OFFER:
-                this.webRtc.onOffer(rtcObject)
+                this.getWebRtc().then(webRtc => webRtc.onOffer(rtcObject))
                 break
             case MessagingEnums.webRtcEvents.ANSWER:
-                this.webRtc.onAnswer(rtcObject)
+                this.getWebRtc().then(webRtc => webRtc.onAnswer(rtcObject))
                 break
             case MessagingEnums.webRtcEvents.CANDIDATE:
-                this.webRtc.onRTCIceCandidate(rtcObject)
+                this.getWebRtc().then(webRtc => webRtc.onRTCIceCandidate(rtcObject))
                 break
         }
     }
-
+    getWebRtc = async () => {
+        return new Promise(resolve => {
+            if (this.webRtc === null) {
+                this.webRtc = new WebRtcConnection(this.sendEventMessage)
+            }
+            resolve(this.webRtc)
+        }).then(webRtc => {
+            if (webRtc.isClosedConnectionState()) {
+                return this.webRtc.initialRtcConnection()
+            }
+            return this.webRtc
+        })
+    }
 }
 
 export default CommunicationService

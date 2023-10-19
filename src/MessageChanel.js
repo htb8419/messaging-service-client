@@ -18,7 +18,7 @@ class MessageChanel {
 
     send = (message) => {
         //MessageValidator.validate(message);\
-        console.log('send message >>>', message)
+        //console.log('send message >>>', message)
         if (message.messageType === 'EVENT') {
             this._sendMessage(message, "/app/event")
         } else {
