@@ -58,7 +58,7 @@ class SocketConnection {
         return new StompClient({
             brokerURL: socketAddress,
             debug: function (msg) {
-                Logger.getLogger()('$stomp ', msg)
+                //Logger.getLogger()('$stomp ', msg)
             },
             connectionTimeout: connectionTimeout,
             reconnectDelay: retryConnect.reconnectDelay,

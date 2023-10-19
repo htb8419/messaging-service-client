@@ -4,12 +4,13 @@ import handleRTCTrackEvent from "./handleRTCTrackEvent";
 import ApplicationConfig from "../../ApplicationConfig";
 import {getMediaStreamConstraints} from './RtcUtils'
 
+const WEB_RTC_HTML_ELEMENTS = ['video#remoteVideo', 'audio#remoteAudio', 'video#localVideo', 'audio#localAudio',]
 const _DEFAULT_WEBRTC_MEDIA_CONSTRAINT = {
     'video': true,
     'audio': {
         echoCancellation: true,
         noiseSuppression: true,
-        sampleRate: 24000,
+        sampleRate: 8000,
         suppressLocalAudioPlayback: true
     },
     selfBrowserSurface: "exclude",
@@ -43,7 +44,6 @@ class WebRtcConnection {
     onIceConnectionStateChange = (event) => {
         this.logConnectionState('onIceConnectionStateChange')
         let iceConnectionState = this.rtcConnection.iceConnectionState;
-        console.log('event.iceconnectionstatechange >>>', iceConnectionState, ' event:', event,)
         if (iceConnectionState === 'disconnected' || iceConnectionState === 'failed') {
             this.closeConnection()
         }
@@ -168,5 +168,4 @@ class WebRtcConnection {
     }
 }
 
-const WEB_RTC_HTML_ELEMENTS = ['video#remoteVideo', 'audio#remoteAudio', 'video#localVideo', 'audio#localAudio',]
 export default WebRtcConnection

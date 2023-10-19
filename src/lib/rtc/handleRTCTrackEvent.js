@@ -1,6 +1,5 @@
 function handleRTCTrackEvent(event) {
     let {streams, track}=event
-    console.log('handleRTCTrackEvent >>> ', track.kind,', streams >>',streams)
     if (streams && streams[0]) {
         streams.forEach(stream=>{
             if (track.kind === 'video') {

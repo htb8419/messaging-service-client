@@ -1,6 +1,5 @@
-import {CustomEventDispatcher, FileUploader, MessageBuilder} from "./lib"
+import {CustomEventDispatcher, FileUploader, Logger, MessageBuilder, SocketConnection} from "./lib"
 import MessageChanel from "./MessageChanel"
-import SocketConnection from "./lib/SocketConnection"
 import MessagingEnums from "./model/MessagingEnums";
 import ApplicationConfig from "./ApplicationConfig";
 
@@ -62,7 +61,7 @@ class MessageService {
     }
     //---------------------- Handle Events ---------------------------------------//
     handleAppEvents = ({type: eventType, detail}) => {
-        console.log('event : ', eventType, " detail > ", detail)
+        Logger.getLogger()('event : ', eventType, " detail > ", detail)
         let appEventDetail = null;
         if (eventType === MessagingEnums.ApplicationEvents.RECEIVED_MESSAGE) {
             let {message} = detail;
@@ -77,7 +76,7 @@ class MessageService {
             let {stompClient, connected, state} = detail
             if (stompClient && connected) {
                 this.messageSender = new MessageChanel(stompClient)
-                this.changePresenceState(window.$roomInfo.roomId,MessagingEnums.UserPresenceState.ONLINE)
+                this.changePresenceState(window.$roomInfo.roomId, MessagingEnums.UserPresenceState.ONLINE)
             }
             appEventDetail = {connected, state}
         } else if (eventType === MessagingEnums.ApplicationEvents.THROW_EXCEPTION) {
