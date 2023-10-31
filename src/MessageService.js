@@ -21,7 +21,9 @@ class MessageService {
         this.applicationEventMap.set("DELIVERY", applicationEvents.MESSAGE_DELIVERY)
         this.applicationEventMap.set("TYPING", applicationEvents.TYPING_STATE_CHANGE)
         this.applicationEventMap.set("PRESENCE", applicationEvents.PRESENCE_STATE_CHANGE)
+        this.applicationEventMap.set("PRESENCE", applicationEvents.CALL_STATE_CHANGE)
 
+        CustomEventDispatcher.registerEventListener(applicationEvents.CALL_STATE_CHANGE, this.handleAppEvents)
         CustomEventDispatcher.registerEventListener(applicationEvents.RECEIVED_MESSAGE, this.handleAppEvents)
         CustomEventDispatcher.registerEventListener(applicationEvents.CONNECTION_STATE_CHANGE, this.handleAppEvents)
         CustomEventDispatcher.registerEventListener(applicationEvents.THROW_EXCEPTION, this.handleAppEvents)
@@ -40,7 +42,7 @@ class MessageService {
     buildTextMessage = (roomId, text) => {
         return this.messageBuilder.instantMessage(roomId, text)
     }
-    buildFileMessage = (roomId, fileItem) => {
+    buildFileMessage = async (roomId, fileItem) => {
         return FileUploader.upload(fileItem).then(fileInfo => {
             return this.messageBuilder.instantMessage(roomId, null, fileInfo)
         })

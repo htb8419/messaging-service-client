@@ -1,6 +1,6 @@
 {
   "name": "@dms-im/messaging-service",
-  "version": "1.1.0-beta.2310191155",
+  "version": "1.1.0-beta.2310301720",
   "description": "",
   "type": "module",
   "module": "./dist/index.es.js",
@@ -41,6 +41,6 @@
   },
   "dependencies": {
     "sockjs-client": "^1.6.1",
-    "@stomp/stompjs": "^7.0.0-beta2"
+    "@stomp/stompjs": "^7.0.0"
   }
 }

@@ -3,6 +3,7 @@ import initUserMediaDevices from "./initUserMediaDevices";
 import handleRTCTrackEvent from "./handleRTCTrackEvent";
 import ApplicationConfig from "../../ApplicationConfig";
 import {getMediaStreamConstraints} from './RtcUtils'
+import {CustomEventDispatcher} from "../index.js";
 
 const WEB_RTC_HTML_ELEMENTS = ['video#remoteVideo', 'audio#remoteAudio', 'video#localVideo', 'audio#localAudio',]
 const _DEFAULT_WEBRTC_MEDIA_CONSTRAINT = {
@@ -103,6 +104,7 @@ class WebRtcConnection {
                 element.srcObject = null
             })
             window.lastCallingTime = Date.now()
+            this.onConnectionStateChange()
             console.debug('the rtcConnection closed')
         }
         if (!force) {
@@ -116,7 +118,8 @@ class WebRtcConnection {
     onConnectionStateChange = (event) => {
         //TODO handle connectionStateChange
         this.logConnectionState('onConnectionStateChange')
-        switch (this.rtcConnection.connectionState) {
+        let connectionState = this.rtcConnection.connectionState;
+        switch (connectionState) {
             case "connecting":
                 break;
             case "connected":
@@ -131,6 +134,9 @@ class WebRtcConnection {
                 // window.chatService.endCall()
                 break;
         }
+        this.publishApplicationEvent(MessagingEnums.ApplicationEvents.CALL_STATE_CHANGE, {
+            state: connectionState
+        })
     }
 
     handleError = error => {
@@ -164,7 +170,10 @@ class WebRtcConnection {
         return this.rtcConnection.connectionState
     }
     logConnectionState = (method = 'm') => {
-        ///window.getLogger()(`${method}, rtcConnectionState [${this.getConnectionState()}]`)
+        window.getLogger()(`${method}, rtcConnectionState [${this.getConnectionState()}]`)
+    }
+    publishApplicationEvent = (eventCode, detail) => {
+        CustomEventDispatcher.dispatchEvent(eventCode, detail)
     }
 }
 

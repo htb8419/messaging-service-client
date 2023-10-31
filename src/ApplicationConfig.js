@@ -1,12 +1,15 @@
 import {ApplicationErrors} from "./model";
 
+const _MASSAGE_SERVICE_CLIENT_VERSION=``;
 const _DEFAULT_MESSAGING_SERVICE_OPTIONS = {
     autoConnect: true,
     messageVersion: 'V2',
     connectionTimeout: 5000,
-    retryConnect: {
-        maxTryCount: 10,
-        reconnectDelay: 3000
+    socket: {
+        maxAttempts: 5,
+        reconnectDelay: 3000,
+        heartbeatIncoming:3000,
+        heartbeatOutgoing:3000
     },
     webRtc: {
         audioElementId: 'webrtc-audio',

@@ -8,36 +8,24 @@ import SecurityContextHolder from "./SecurityContextHolder";
 class SocketConnection {
 
     constructor() {
-        this.stompClient = this.createClientOverSocket();
-        this.stompClient.beforeConnect = () => {
-            let {retryConnect: {maxTryCount}} = ApplicationConfig.getConfig();
-            Logger.getLogger()('tryCount :', this.tryCount, ' maxTryCount :', maxTryCount)
-            if (this.tryCount === maxTryCount) {
-                this.connectFailed()
-            } else {
-                this.onConnectionStateChange(MessagingEnums.ConnectionStates.CONNECTING)
-                this.tryCount++
-            }
-        }
-        this.stompClient.onConnect = this.connectSuccess
-        this.stompClient.onDisconnect = this.connectFailed
         //this.stompClient.onWebSocketClose = ?
         //this.stompClient.onWebSocketError = ?
     }
 
     connect() {
-        this.tryCount = 0
+        this.stompClient = this.createClientOverSocket();
+        this.retryCount = 0
         this.stompClient.activate()
     }
 
     connectSuccess = () => {
+        this.retryCount = 0
         this.onConnectionStateChange(MessagingEnums.ConnectionStates.CONNECTED)
     }
 
     connectFailed = () => {
-        this.tryCount = 0
-        if (this.stompClient && this.stompClient.active) {
-            this.stompClient?.deactivate().then(() => {
+        if (this.stompClient) {
+            this.stompClient.deactivate().then(() => {
                 this.onConnectionStateChange(MessagingEnums.ConnectionStates.DISCONNECTED)
             })
         }
@@ -52,19 +40,31 @@ class SocketConnection {
     }
 
     createClientOverSocket = () => {
-        let {socketUrl, connectionTimeout, retryConnect} = ApplicationConfig.getConfig()
+        let {socketUrl, connectionTimeout, socket: socketConfig} = ApplicationConfig.getConfig()
         let {accessToken, sessionId} = SecurityContextHolder.getCurrentContext()
         let socketAddress = `${socketUrl}/websocket?access_token=${accessToken}&sid=${sessionId}`
-        return new StompClient({
+        let stompClient = new StompClient({
             brokerURL: socketAddress,
             debug: function (msg) {
-                //Logger.getLogger()('$stomp ', msg)
+                Logger.getLogger()('$stomp ', msg)
             },
             connectionTimeout: connectionTimeout,
-            reconnectDelay: retryConnect.reconnectDelay,
-            heartbeatIncoming: 2000,
-            heartbeatOutgoing: 2000,
+            reconnectDelay: socketConfig.reconnectDelay,
+            heartbeatIncoming: socketConfig.heartbeatIncoming,
+            heartbeatOutgoing: socketConfig.heartbeatOutgoing,
         })
+        stompClient.onConnect = this.connectSuccess
+        stompClient.onDisconnect = this.connectFailed
+        stompClient.beforeConnect = () => {
+            Logger.getLogger()('retryCount :', this.retryCount, ' maxAttempts :', socketConfig.maxAttempts)
+            if (this.retryCount === socketConfig.maxAttempts) {
+                this.connectFailed()
+            } else {
+                this.onConnectionStateChange(MessagingEnums.ConnectionStates.CONNECTING)
+                this.retryCount++
+            }
+        }
+        return stompClient
     }
 }
 

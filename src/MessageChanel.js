@@ -12,8 +12,8 @@ class MessageChanel {
         this.stompClient = stompClient
         this.messageQueue = new MessageQueue()
         let {sessionId} = SecurityContextHolder.getCurrentContext()
-        stompClient.subscribe(`/user/${sessionId}/queue/event`, this.receive)
-        stompClient.subscribe(`/user/${sessionId}/queue/im`, this.receive)
+        stompClient.subscribe(`/user/${sessionId}/queue/event`, this.receive, {'ack': 'client'})
+        stompClient.subscribe(`/user/${sessionId}/queue/im`, this.receive, {'ack': 'client'})
     }
 
     send = (message) => {

@@ -10,6 +10,7 @@ class CommunicationService {
         this.roomId = roomId
         CustomEventDispatcher.registerEventListener(MessagingEnums.ApplicationEvents.CONNECTION_STATE_CHANGE, this.handleAppEvents)
         CustomEventDispatcher.registerEventListener(MessagingEnums.ApplicationEvents.RECEIVED_MESSAGE, this.handleAppEvents)
+        CustomEventDispatcher.registerEventListener(MessagingEnums.webRtcEvents.END_CALL, this.handleAppEvents)
         this.webRtc = null;
     }
 
@@ -30,6 +31,12 @@ class CommunicationService {
     }
 
     endCall = () => {
+        this.getWebRtc().then(webRtc => {
+            this.closeRtcConnection()
+            this.sendEventMessage(MessagingEnums.webRtcEvents.END_CALL, {})
+        })
+    }
+    closeRtcConnection = () => {
         this.getWebRtc().then(webRtc => webRtc.closeConnection())
     }
 
@@ -67,8 +74,12 @@ class CommunicationService {
             case MessagingEnums.webRtcEvents.CANDIDATE:
                 this.getWebRtc().then(webRtc => webRtc.onRTCIceCandidate(rtcObject))
                 break
+            case MessagingEnums.webRtcEvents.END_CALL:
+                this.closeRtcConnection()
+                break
         }
     }
+
     getWebRtc = async () => {
         return new Promise(resolve => {
             if (this.webRtc === null) {
