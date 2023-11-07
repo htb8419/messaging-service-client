@@ -4,18 +4,15 @@ import handleRTCTrackEvent from "./handleRTCTrackEvent";
 import ApplicationConfig from "../../ApplicationConfig";
 import {getMediaStreamConstraints} from './RtcUtils'
 import {CustomEventDispatcher} from "../index.js";
+import logger from "../Logger.js";
 
 const WEB_RTC_HTML_ELEMENTS = ['video#remoteVideo', 'audio#remoteAudio', 'video#localVideo', 'audio#localAudio',]
 const _DEFAULT_WEBRTC_MEDIA_CONSTRAINT = {
     'video': true,
     'audio': {
         echoCancellation: true,
-        noiseSuppression: true,
-        sampleRate: 8000,
-        suppressLocalAudioPlayback: true
-    },
-    selfBrowserSurface: "exclude",
-    systemAudio: "exclude"
+        noiseSuppression: true
+    }
 }
 
 class WebRtcConnection {
@@ -131,7 +128,7 @@ class WebRtcConnection {
                 this.closeConnection(true)
                 break;
             case "closed":
-                // window.chatService.endCall()
+                //window.chatService.endCall()
                 break;
         }
         this.publishApplicationEvent(MessagingEnums.ApplicationEvents.CALL_STATE_CHANGE, {
@@ -170,7 +167,7 @@ class WebRtcConnection {
         return this.rtcConnection.connectionState
     }
     logConnectionState = (method = 'm') => {
-        window.getLogger()(`${method}, rtcConnectionState [${this.getConnectionState()}]`)
+        logger.getLogger()(`${method}, rtcConnectionState [${this.getConnectionState()}]`)
     }
     publishApplicationEvent = (eventCode, detail) => {
         CustomEventDispatcher.dispatchEvent(eventCode, detail)

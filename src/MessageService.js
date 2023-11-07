@@ -63,7 +63,7 @@ class MessageService {
     }
     //---------------------- Handle Events ---------------------------------------//
     handleAppEvents = ({type: eventType, detail}) => {
-        Logger.getLogger()('event : ', eventType, " detail > ", detail)
+        Logger.getLogger()('event >> ', eventType)
         let appEventDetail = null;
         if (eventType === MessagingEnums.ApplicationEvents.RECEIVED_MESSAGE) {
             let {message} = detail;
@@ -78,7 +78,7 @@ class MessageService {
             let {stompClient, connected, state} = detail
             if (stompClient && connected) {
                 this.messageSender = new MessageChanel(stompClient)
-                this.changePresenceState(window.$roomInfo.roomId, MessagingEnums.UserPresenceState.ONLINE)
+                this.changePresenceState(window.$imRoomInfo.roomId, MessagingEnums.UserPresenceState.ONLINE)
             }
             appEventDetail = {connected, state}
         } else if (eventType === MessagingEnums.ApplicationEvents.THROW_EXCEPTION) {

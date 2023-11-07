@@ -23,7 +23,7 @@ function getRoomInfo(roomCode) {
             if (!roomInfo) {
                 return roomInfo
             }
-            window.$roomInfo=roomInfo
+            window.$imRoomInfo=roomInfo
             SecurityContextHolder.initialContext(roomInfo['currentParticipant']['token'])
             return roomInfo
         })
