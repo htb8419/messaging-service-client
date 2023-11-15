@@ -1,7 +1,7 @@
 import {Client as StompClient} from "@stomp/stompjs";
 
 import {MessagingEnums} from '../model'
-import {CustomEventDispatcher, Logger} from "./index";
+import CustomEventDispatcher from "./CustomEventDispatcher";
 import ApplicationConfig from "../ApplicationConfig";
 import SecurityContextHolder from "./SecurityContextHolder";
 
@@ -22,13 +22,13 @@ class SocketConnection {
     createClientOverSocket = () => {
         let {socketUrl, connectionTimeout, socket: socketConfig} = ApplicationConfig.getConfig()
         let {accessToken, sessionId} = SecurityContextHolder.getCurrentContext()
-        //socketUrl='ws://192.168.103.34:9090/ws-adapter'
-        let socketAddress = `${socketUrl}/websocket?access_token=${accessToken}&sid=${sessionId}`
+        //socketUrl='ws://192.168.103.127:9090/ws-adapter'
+        let  brokerURL= `${socketUrl}/websocket?access_token=${accessToken}&sid=${sessionId}`
         let retryCount = 0
         const stompClient = new StompClient({
-            brokerURL: socketAddress,
+            brokerURL: brokerURL,
             debug: function (msg) {
-                Logger.getLogger()('$stomp ', msg)
+                console.debug('$stomp ', msg)
             },
             connectionTimeout: connectionTimeout,
             reconnectDelay: socketConfig.reconnectDelay,
@@ -41,7 +41,7 @@ class SocketConnection {
         }
 
         stompClient.beforeConnect = () => {
-            Logger.getLogger()('retryCount :', retryCount, ' maxAttempts :', socketConfig.maxAttempts)
+            console.debug('retryCount :', retryCount, ' maxAttempts :', socketConfig.maxAttempts)
             if (retryCount === socketConfig.maxAttempts) {
                 stompClient.deactivate().then(() => {
                     this.onConnectionStateChange(MessagingEnums.ConnectionStates.DISCONNECTED)

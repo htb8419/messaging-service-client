@@ -8,11 +8,11 @@ function getConnectedDevices(type) {
     });
 }
 
-function existsConnectedDevices(type) {
-    return getConnectedDevices(type).then(connectedDevices => connectedDevices.length > 0)
+async function existsConnectedDevices(type) {
+    return getConnectedDevices(type).then(connectedDevices=>connectedDevices.length > 0);
 }
 
-async function getMediaStreamConstraints(requestMediaStreamConstraint) {
+async function getConnectedMediaDevices(requestMediaStreamConstraint) {
     if ('video' in requestMediaStreamConstraint && requestMediaStreamConstraint.video !== false) {
         let existsDevice = await existsConnectedDevices('videoinput');
         if (!existsDevice) {
@@ -26,9 +26,18 @@ async function getMediaStreamConstraints(requestMediaStreamConstraint) {
     }
     return requestMediaStreamConstraint
 }
+/*
+async function getUserMediaDevices(mediaStreamConstraints) {
+    return getMediaStreamConstraints(mediaStreamConstraints)
+        .then((constraints) => navigator.mediaDevices.getUserMedia(constraints))
+}*/
+async function getUserMediaDevices(mediaStreamConstraints) {
+    return navigator.mediaDevices.getUserMedia(mediaStreamConstraints)
+}
 
-//getConnectedDevices('videoinput', cameras => console.log('Cameras found', cameras));
 export {
+    getUserMediaDevices,
     getMediaDeviceInfo,
-    getMediaStreamConstraints
+    getConnectedMediaDevices,
+    existsConnectedDevices
 }

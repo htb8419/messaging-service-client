@@ -17,11 +17,8 @@ const getWebRtcHtmlElements = (mediaStreamConstraints) => {
     }
     return htmlElements
 }
-const initUserMediaDevices = async (rtcConnection, mediaStreamConstraints) => {
+const initUserMediaDevices = async (rtcConnection,userMediaStream, mediaStreamConstraints) => {
     try {
-
-        let userMediaStream = await navigator.mediaDevices.getUserMedia(mediaStreamConstraints)
-
         let mediaStreamTracks = userMediaStream.getTracks();
         if (!mediaStreamTracks || mediaStreamTracks.length < 1) {
             return Promise.reject(new Error('userMedia is empty'))
@@ -29,18 +26,15 @@ const initUserMediaDevices = async (rtcConnection, mediaStreamConstraints) => {
      /*   let localElement = document.querySelector('video#localVideo')
         localElement.srcObject = userMediaStream*/
 
-        let htmlElements = getWebRtcHtmlElements(mediaStreamConstraints)
-        htmlElements.forEach(element => element.srcObject = userMediaStream)
+  /*      let htmlElements = getWebRtcHtmlElements(mediaStreamConstraints)
+        htmlElements.forEach(element => element.srcObject = userMediaStream)*/
 
-
-        let rtcRtpSender = []
         for (const track of mediaStreamTracks) {
-            let ref = rtcConnection.addTrack(track, userMediaStream)
-            rtcRtpSender.push(ref)
+            rtcConnection.addTrack(track, userMediaStream)
         }
         return userMediaStream
     } catch (ex) {
-        console.error('Error accessing media devices.', ex);
+
         CustomEventDispatcher.dispatchEvent(MessagingEnums.ApplicationEvents.THROW_EXCEPTION, {error: ApplicationErrors.ERROR_ON_ACCESSING_MEDIA_DEVICES})
     }
 }

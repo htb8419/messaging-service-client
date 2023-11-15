@@ -1,7 +1,8 @@
-import {CustomEventDispatcher, FileUploader, Logger, MessageBuilder, SocketConnection} from "./lib"
+import {CustomEventDispatcher, FileUploader, MessageBuilder} from "./lib"
 import MessageChanel from "./MessageChanel"
 import MessagingEnums from "./model/MessagingEnums";
 import ApplicationConfig from "./ApplicationConfig";
+import SecurityContextHolder from "./lib/SecurityContextHolder.js";
 
 class MessageService {
 
@@ -21,7 +22,7 @@ class MessageService {
         this.applicationEventMap.set("DELIVERY", applicationEvents.MESSAGE_DELIVERY)
         this.applicationEventMap.set("TYPING", applicationEvents.TYPING_STATE_CHANGE)
         this.applicationEventMap.set("PRESENCE", applicationEvents.PRESENCE_STATE_CHANGE)
-        this.applicationEventMap.set("PRESENCE", applicationEvents.CALL_STATE_CHANGE)
+        this.applicationEventMap.set("CALL_STATE_CHANGE", applicationEvents.CALL_STATE_CHANGE)
 
         CustomEventDispatcher.registerEventListener(applicationEvents.CALL_STATE_CHANGE, this.handleAppEvents)
         CustomEventDispatcher.registerEventListener(applicationEvents.RECEIVED_MESSAGE, this.handleAppEvents)
@@ -31,7 +32,52 @@ class MessageService {
     }
 
     connect = () => {
-        new SocketConnection().connect()
+        let retryCount = 0
+        let maxAttempts = 5;
+        let reconnectDelay = 3000;
+        let {socketUrl} = ApplicationConfig.getConfig()
+        let {accessToken, sessionId} = SecurityContextHolder.getCurrentContext()
+        const brokerURL = `${socketUrl}/websocket?access_token=${accessToken}&sid=${sessionId}`
+
+        const createStompClient = () => {
+            const onConnectionStateChange=(state)=>{
+                CustomEventDispatcher.dispatchEvent(MessagingEnums.ApplicationEvents.CONNECTION_STATE_CHANGE, {
+                    stompClient: stompClient,
+                    connected: MessagingEnums.ConnectionStates.CONNECTED===state,
+                    state
+                })
+            }
+            const connectCallback = () => {
+                onConnectionStateChange(MessagingEnums.ConnectionStates.CONNECTED)
+            }
+            const errorCallback = () => {
+                if (retryCount < maxAttempts) {
+                    retryCount++
+                    setTimeout(createStompClient, reconnectDelay)
+                } else {
+                    onConnectionStateChange(MessagingEnums.ConnectionStates.DISCONNECTED)
+                }
+            }
+            console.debug('try connect to server, retryCount=',retryCount,' maxAttempts=',maxAttempts)
+            let stompClient = window.Stomp.client(brokerURL)
+            stompClient.debug = (msg) => {
+                console.debug("$stompClient: ", msg)
+            }
+            /*
+            stompClient.subscribe(`/user/${sessionId}/queue/im`, this.messageHandler, {'ack': 'client'})
+            stompClient.subscribe(`/user/${sessionId}/queue/event`,this.messageHandler, {'ack': 'client'})
+            */
+            onConnectionStateChange(MessagingEnums.ConnectionStates.CONNECTING)
+            stompClient.connect({"heart-beat": "10000,10000"}, connectCallback, errorCallback)
+            return stompClient
+        }
+        createStompClient()
+
+    }
+    messageHandler = (msg) => {
+        msg.ack()
+        let payload = JSON.parse(msg.body)
+        CustomEventDispatcher.dispatchEvent(MessagingEnums.ApplicationEvents.RECEIVED_MESSAGE, {isMessageOut: false, ...payload})
     }
     disconnect = () => {
     }
@@ -63,7 +109,7 @@ class MessageService {
     }
     //---------------------- Handle Events ---------------------------------------//
     handleAppEvents = ({type: eventType, detail}) => {
-        Logger.getLogger()('event >> ', eventType)
+        //Logger.getLogger()(`eventType=${eventType}, detail=`,detail)
         let appEventDetail = null;
         if (eventType === MessagingEnums.ApplicationEvents.RECEIVED_MESSAGE) {
             let {message} = detail;
@@ -81,7 +127,8 @@ class MessageService {
                 this.changePresenceState(window.$imRoomInfo.roomId, MessagingEnums.UserPresenceState.ONLINE)
             }
             appEventDetail = {connected, state}
-        } else if (eventType === MessagingEnums.ApplicationEvents.THROW_EXCEPTION) {
+        } else if (eventType === MessagingEnums.ApplicationEvents.THROW_EXCEPTION
+            || eventType === MessagingEnums.ApplicationEvents.CALL_STATE_CHANGE) {
             appEventDetail = detail
         }
         let applicationEvent = this.applicationEventMap.get(eventType)
@@ -90,5 +137,6 @@ class MessageService {
         }
     }
 }
+
 
 export default MessageService

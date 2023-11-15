@@ -14,7 +14,7 @@ const _DEFAULT_MESSAGING_SERVICE_OPTIONS = {
         audioElementId: 'webrtc-audio',
         localVideoElementId: 'localVideo',
         remoteVideoElementId: 'remoteVideo',
-        serverConfiguration: {
+        turnServerConfiguration: {
             "iceServers": [{"urls": "stun:turn.demisco.com:5349"},
                 {
                     "urls": "turn:turn.demisco.com:5349",

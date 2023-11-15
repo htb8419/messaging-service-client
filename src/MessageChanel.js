@@ -35,7 +35,7 @@ class MessageChanel {
 
     enable = () => {
         if (!this.syncIntervalId) {
-            const SYNC_MESSAGE_QUEUE_INTERVAL = 300;
+            const SYNC_MESSAGE_QUEUE_INTERVAL = 100;
             this.syncIntervalId = setInterval(this._syncMessageQueue, SYNC_MESSAGE_QUEUE_INTERVAL)
         }
     }
@@ -77,7 +77,8 @@ class MessageChanel {
             [MessagingEnums.MessageHeaders.MESSAGE_SENT_TIME]: Date.now(),
             [MessagingEnums.MessageHeaders.CONTENT_TYPE]: 'application/json'
         }
-        this.stompClient.publish({destination, body: JSON.stringify(message), headers});
+        this.stompClient.send(destination, headers, JSON.stringify(message))
+        //this.stompClient.publish({destination, body: JSON.stringify(message), headers});
     }
 }
 
