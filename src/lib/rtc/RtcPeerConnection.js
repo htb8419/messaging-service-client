@@ -59,8 +59,9 @@ const createRtcConnection = () => {
         }
     }
     newConnection.addEventListener('track', (e) => {
-        let audioElement = document.querySelector('video#remoteVideo')
-        audioElement.srcObject = e.streams[0]
+        let remoteVideo = document.querySelector('video#remoteVideo')
+        remoteVideo.srcObject = e.streams[0]
+        remoteVideo.play()
     })
     newConnection.onconnectionstatechange = (event) => {
         console.debug('onconnectionstatechange >> ', event.target.connectionState)

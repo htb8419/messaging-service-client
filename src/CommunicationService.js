@@ -5,6 +5,7 @@ import {
 } from "./lib/rtc/RtcPeerConnection.js";
 import {CustomEventDispatcher} from "./lib";
 import MessagingEnums from "./model/MessagingEnums";
+import adapter from 'webrtc-adapter';
 
 class CommunicationService {
 
