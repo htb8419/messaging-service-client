@@ -1,4 +1,6 @@
 import {getConnectedMediaDevices} from './RtcUtils'
+import CustomEventDispatcher from "../CustomEventDispatcher";
+import {MessagingEnums} from "../../model/index.js";
 
 const WEBRTC_ICE_CONFIGURATION = {
     "iceServers": [{"urls": "stun:turn.demisco.com:5349"},
@@ -9,11 +11,20 @@ const WEBRTC_ICE_CONFIGURATION = {
         }]
 }
 const WEBRTC_MEDIA_STREAM_CONSTRAINTS = {
-    'video': true,
+    'video': {
+        width: {min: 640, ideal: 720, max: 1920},
+        height: {min: 480, ideal: 1280, max: 1080},
+        frameRate: {min: 16, max: 30}
+    },
     'audio': {
         echoCancellation: true,
         noiseSuppression: true,
     }
+}
+const WEBRTC_OFFER_OPTIONS = {
+    iceRestart: true,
+    offerToReceiveAudio: true,
+    offerToReceiveVideo: true
 }
 const WEB_RTC_HTML_ELEMENTS = ['video#remoteVideo', 'video#localVideo']
 let rtcConnection = null
@@ -23,7 +34,9 @@ const closeRtcPeerConnection = () => {
     WEB_RTC_HTML_ELEMENTS.forEach(elementId => {
         let element = document.querySelector(elementId)
         if (element.srcObject) {
-            element.pause()
+            if(element.played){
+                element.pause()
+            }
             element.srcObject.getTracks().forEach(track => track && track.stop())
             element.srcObject = null
         }
@@ -61,20 +74,32 @@ const createRtcConnection = () => {
     newConnection.addEventListener('track', (e) => {
         let remoteVideo = document.querySelector('video#remoteVideo')
         remoteVideo.srcObject = e.streams[0]
-        remoteVideo.play()
-    })
-    newConnection.onconnectionstatechange = (event) => {
-        console.debug('onconnectionstatechange >> ', event.target.connectionState)
-        switch (event.target.connectionState) {
-            case "connected":
-                console.log('WebRTC connected')
+        if (remoteVideo.paused) {
+            remoteVideo.play()
+        }
+    }, false)
+    newConnection.onsignalingstatechange = (event) => {
+        console.debug("onsignalingstatechange >> ", event.target.signalingState);
+        switch (event.target.signalingState) {
+            case "stable":
+                console.debug("ICE negotiation complete")
                 break;
+        }
+    }
+    newConnection.onconnectionstatechange = (event) => {
+        let connectionState = event.target.connectionState
+        switch (connectionState) {
             case "disconnected":
             case "failed":
             case "closed":
+                connectionState = 'closed'
                 communicationService.endCall()
                 break;
         }
+        console.debug('onconnectionstatechange >> ', connectionState)
+        publishApplicationEvent(MessagingEnums.ApplicationEvents.CALL_STATE_CHANGE, {
+            state: connectionState
+        })
     }
     return newConnection
 }
@@ -86,14 +111,14 @@ const initRtcPeerConnection = async () => {
     rtcConnection = createRtcConnection()
     console.debug('getUserMedia')
     const connectedMediaDevices = await getConnectedMediaDevices(WEBRTC_MEDIA_STREAM_CONSTRAINTS);
-    console.debug('connectedMediaDevices >> ',connectedMediaDevices)
+    console.debug('connectedMediaDevices >> ', connectedMediaDevices)
     return navigator.mediaDevices.getUserMedia(connectedMediaDevices).then(mediaStream => {
         console.debug('mediaStream >>> ', mediaStream)
         localMediaStream = mediaStream
-        if (connectedMediaDevices.video) {
-            let localElement = document.querySelector('video#localVideo')
-            localElement.srcObject = mediaStream
-        }
+        //if (connectedMediaDevices.video) {
+        let localElement = document.querySelector('video#localVideo')
+        localElement.srcObject = mediaStream
+        //}
         let mediaStreamTracks = mediaStream.getTracks();
         if (!mediaStreamTracks || mediaStreamTracks.length < 1) {
             throw new Error('call error')
@@ -108,7 +133,7 @@ const initRtcPeerConnection = async () => {
 
 function sendOffer() {
     console.log('sendWebRtcOffer >> ', rtcConnection)
-    rtcConnection.createOffer({iceRestart: true}).then(offer => {
+    rtcConnection.createOffer(WEBRTC_OFFER_OPTIONS).then(offer => {
         rtcConnection.setLocalDescription(offer).then(() => sendRtcEvent('OFFER', offer))
     }).catch(handleRtcErrors)
 }
@@ -162,6 +187,10 @@ function sendRtcEvent(state, rtcObject) {
     communicationService.sendRtcEvent(state, rtcObject)
 }
 
+function publishApplicationEvent(eventCode, detail) {
+    CustomEventDispatcher.dispatchEvent(eventCode, detail)
+}
+
 const handleRtcErrors = error => {
     console.error('handleRtcErrors >>> ', error)
     let errorMessage;
@@ -170,7 +199,7 @@ const handleRtcErrors = error => {
     } else if (error.message) {
         errorMessage = error.message
     } else {
-        errorMessage = 'Error.internalServiceError'
+        errorMessage = error
     }
     alert(errorMessage);
     //throw error
