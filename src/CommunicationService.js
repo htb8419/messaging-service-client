@@ -1,10 +1,7 @@
-import {
-    initRtcPeerConnection,
-    handleRtcEvents,
-    closeRtcPeerConnection
-} from "./lib/rtc/RtcPeerConnection.js";
+import * as webRTc from "./lib/rtc/RtcPeerConnection.js";
 import {CustomEventDispatcher} from "./lib";
 import MessagingEnums from "./model/MessagingEnums";
+//require for webrtc shim
 import adapter from 'webrtc-adapter';
 
 class CommunicationService {
@@ -19,16 +16,23 @@ class CommunicationService {
     }
 
     makeCall = () => {
-        initRtcPeerConnection().then(() => {
+        webRTc.initRtcPeerConnection().then(() => {
             this.sendRtcEvent('CALL_REQUEST', {})
         })
     }
 
     endCall = () => {
-        closeRtcPeerConnection()
+        webRTc.closeRtcPeerConnection()
         this.sendRtcEvent(MessagingEnums.webRtcEvents.END_CALL, {})
     }
 
+    playLocalMedia = () => {
+        webRTc.playLocalVideo()
+    }
+
+    pauseLocalMedia = () => {
+        webRTc.pauseLocalVideo()
+    }
     sendRtcEvent = (state, rtcObject) => {
         return this.sendEventMessage('WRTC', {
             state,
@@ -46,7 +50,7 @@ class CommunicationService {
             let {message} = detail
             if (message.messageType === 'EVENT') {
                 if (message.state && MessagingEnums.webRtcEvents.hasOwnProperty(message.state)) {
-                    handleRtcEvents(message.state, message.rtcObject)
+                    webRTc.handleRtcEvents(message.state, message.rtcObject)
                 }
             }
         }

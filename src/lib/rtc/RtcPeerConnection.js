@@ -12,9 +12,9 @@ const WEBRTC_ICE_CONFIGURATION = {
 }
 const WEBRTC_MEDIA_STREAM_CONSTRAINTS = {
     'video': {
-        width: {min: 640, ideal: 720, max: 1920},
-        height: {min: 480, ideal: 1280, max: 1080},
-        frameRate: {min: 16, max: 30}
+        width: {min: 160, ideal: 320, max: 640},
+        height: {min: 120, ideal: 240, max: 480},
+        frameRate: {min: 16, max: 24}
     },
     'audio': {
         echoCancellation: true,
@@ -26,32 +26,35 @@ const WEBRTC_OFFER_OPTIONS = {
     offerToReceiveAudio: true,
     offerToReceiveVideo: true
 }
-const WEB_RTC_HTML_ELEMENTS = ['video#remoteVideo', 'video#localVideo']
+
 let rtcConnection = null
 let localMediaStream = null
+let _localVideoPlayPromise = null
+
 const closeRtcPeerConnection = () => {
-    console.log('closeRtcPeerConnection  >> ', new Date())
-    WEB_RTC_HTML_ELEMENTS.forEach(elementId => {
-        let element = document.querySelector(elementId)
+    const WEB_RTC_HTML_ELEMENTS = ['video#remoteVideo', 'video#localVideo']
+    WEB_RTC_HTML_ELEMENTS.forEach(selector => {
+        let element = document.querySelector(selector)
         if (element.srcObject) {
-            if(element.played){
+            console.debug('selector =', selector, ' stopping stream tracks')
+            element.srcObject.getTracks().forEach(track => track.stop())
+            if (!element.paused) {
                 element.pause()
             }
-            element.srcObject.getTracks().forEach(track => track && track.stop())
             element.srcObject = null
         }
     })
     if (rtcConnection) {
+        // Stop all transceivers on the connection
+        rtcConnection.getTransceivers().forEach(transceiver => {
+            transceiver.stop();
+        });
         rtcConnection.ontrack = null;
         rtcConnection.onnicecandidate = null;
         rtcConnection.oniceconnectionstatechange = null;
         rtcConnection.onsignalingstatechange = null;
         rtcConnection.onicegatheringstatechange = null;
         rtcConnection.onnotificationneeded = null;
-        // Stop all transceivers on the connection
-        rtcConnection.getTransceivers().forEach(transceiver => {
-            transceiver.stop();
-        });
 
         rtcConnection.close()
         rtcConnection = null
@@ -61,6 +64,7 @@ const closeRtcPeerConnection = () => {
 }
 
 const createRtcConnection = () => {
+    console.debug('create new RtcPeerConnection')
     if (rtcConnection) {
         alert("rtcConnection is exists.")
         throw new Error("rtcConnection is exists.")
@@ -74,9 +78,6 @@ const createRtcConnection = () => {
     newConnection.addEventListener('track', (e) => {
         let remoteVideo = document.querySelector('video#remoteVideo')
         remoteVideo.srcObject = e.streams[0]
-        if (remoteVideo.paused) {
-            remoteVideo.play()
-        }
     }, false)
     newConnection.onsignalingstatechange = (event) => {
         console.debug("onsignalingstatechange >> ", event.target.signalingState);
@@ -107,18 +108,14 @@ const createRtcConnection = () => {
 const initRtcPeerConnection = async () => {
     console.debug('initRtcPeerConnection')
     closeRtcPeerConnection()
-    console.debug('create new RtcPeerConnection')
     rtcConnection = createRtcConnection()
-    console.debug('getUserMedia')
     const connectedMediaDevices = await getConnectedMediaDevices(WEBRTC_MEDIA_STREAM_CONSTRAINTS);
-    console.debug('connectedMediaDevices >> ', connectedMediaDevices)
     return navigator.mediaDevices.getUserMedia(connectedMediaDevices).then(mediaStream => {
-        console.debug('mediaStream >>> ', mediaStream)
         localMediaStream = mediaStream
-        //if (connectedMediaDevices.video) {
-        let localElement = document.querySelector('video#localVideo')
-        localElement.srcObject = mediaStream
-        //}
+        if (connectedMediaDevices.video) {
+            let localElement = document.querySelector('video#localVideo')
+            localElement.srcObject = mediaStream
+        }
         let mediaStreamTracks = mediaStream.getTracks();
         if (!mediaStreamTracks || mediaStreamTracks.length < 1) {
             throw new Error('call error')
@@ -132,22 +129,25 @@ const initRtcPeerConnection = async () => {
 }
 
 function sendOffer() {
-    console.log('sendWebRtcOffer >> ', rtcConnection)
+    console.debug('signalingState, sendOffer >>', rtcConnection.signalingState)
     rtcConnection.createOffer(WEBRTC_OFFER_OPTIONS).then(offer => {
         rtcConnection.setLocalDescription(offer).then(() => sendRtcEvent('OFFER', offer))
     }).catch(handleRtcErrors)
 }
 
 function onOffer(offer) {
+    console.debug('signalingState, onOffer >>', rtcConnection.signalingState)
     rtcConnection.setRemoteDescription(new RTCSessionDescription(offer))
         .then(() => {
             rtcConnection.createAnswer().then((answer) => {
+                console.debug('signalingState, createdAnswer >>', rtcConnection.signalingState)
                 rtcConnection.setLocalDescription(answer).then(() => sendRtcEvent('ANSWER', answer))
             }).catch(handleRtcErrors)
         }).catch(handleRtcErrors)
 }
 
 function onRTCIceCandidate(iceCandidate) {
+    console.debug('signalingState, onRTCIceCandidate >>', rtcConnection.signalingState)
     if (iceCandidate && rtcConnection && rtcConnection.currentRemoteDescription) {
         rtcConnection.addIceCandidate(iceCandidate).catch(handleRtcErrors)
     }
@@ -183,6 +183,32 @@ const handleRtcEvents = (eventType, rtcObject) => {
     }
 }
 
+function playLocalVideo() {
+    let localVideo = getLocalVideo()
+    if (localVideo.srcObject && localVideo.paused) {
+        _localVideoPlayPromise = localVideo.play()
+    }
+}
+
+function pauseLocalVideo() {
+    let localVideo = getLocalVideo()
+    if (localVideo.paused) {
+        return
+    }
+    if (_localVideoPlayPromise) {
+        _localVideoPlayPromise.finally(() => {
+            localVideo.pause()
+            _localVideoPlayPromise = null
+        })
+    } else {
+        localVideo.pause()
+    }
+}
+
+const getLocalVideo = () => {
+    return document.querySelector('video#localVideo')
+}
+
 function sendRtcEvent(state, rtcObject) {
     communicationService.sendRtcEvent(state, rtcObject)
 }
@@ -207,9 +233,7 @@ const handleRtcErrors = error => {
 export {
     initRtcPeerConnection,
     handleRtcEvents,
-    sendOffer,
-    onOffer,
-    onAnswer,
-    onRTCIceCandidate,
-    closeRtcPeerConnection
+    closeRtcPeerConnection,
+    playLocalVideo,
+    pauseLocalVideo
 }

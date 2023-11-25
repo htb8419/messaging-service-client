@@ -9,23 +9,26 @@ function getConnectedDevices(type) {
 }
 
 async function existsConnectedDevices(type) {
-    return getConnectedDevices(type).then(connectedDevices=>connectedDevices.length > 0);
+    return getConnectedDevices(type).then(connectedDevices => connectedDevices.length > 0);
 }
 
-async function getConnectedMediaDevices(requestMediaStreamConstraint) {
-    if ('video' in requestMediaStreamConstraint && requestMediaStreamConstraint.video !== false) {
+async function getConnectedMediaDevices(requestedMedia) {
+    let connectedMediaDevices = requestedMedia
+    if ('video' in requestedMedia && requestedMedia.video !== false) {
         let existsDevice = await existsConnectedDevices('videoinput');
         if (!existsDevice) {
-            requestMediaStreamConstraint.video = false
+            connectedMediaDevices.video = false
         }
     }
-    if ('audio' in requestMediaStreamConstraint) {
+    if ('audio' in requestedMedia) {
         if (!(await existsConnectedDevices('audioinput'))) {
-            requestMediaStreamConstraint.audio = false
+            connectedMediaDevices.audio = false
         }
     }
-    return requestMediaStreamConstraint
+    console.debug('requestedMedia:',requestedMedia,'connectedMediaDevices:', connectedMediaDevices)
+    return requestedMedia
 }
+
 /*
 async function getUserMediaDevices(mediaStreamConstraints) {
     return getMediaStreamConstraints(mediaStreamConstraints)
