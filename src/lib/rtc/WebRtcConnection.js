@@ -1,5 +1,4 @@
 import {MessagingEnums} from "../../model";
-import handleRTCTrackEvent from "./handleRTCTrackEvent";
 import ApplicationConfig from "../../ApplicationConfig";
 import {getUserMediaDevices} from './RtcUtils'
 import {CustomEventDispatcher} from "../index.js";
@@ -47,7 +46,7 @@ class WebRtcConnection {
     newRtcConnection = () => {
         let {webRtc: {rtcConfiguration}} = ApplicationConfig.getConfig()
         let rtcConnection = new RTCPeerConnection(rtcConfiguration)
-        rtcConnection.addEventListener('track', handleRTCTrackEvent)
+        rtcConnection.addEventListener('track', null)
         rtcConnection.addEventListener('icecandidate', this.sendCandidate)
         rtcConnection.addEventListener('connectionstatechange', this.onConnectionStateChange)
         return rtcConnection;

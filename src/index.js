@@ -1,7 +1,7 @@
 import MessageService from './MessageService'
 import ApplicationConfig from "./ApplicationConfig"
 import MessagingEnums from './model/MessagingEnums'
-import CommunicationService from './CommunicationService'
+import CommunicationClient from './CommunicationClient.js'
 import getRoomInfo from "./lib/getRoomInfo";
 import fileUrl from "./lib/fileUrl";
 
@@ -13,7 +13,6 @@ export {
     fileUrl,
     getRoomInfo,
     MessagingEnums,
-    MessageService,
-    CommunicationService,
+    CommunicationClient,
     initializeApp
 }

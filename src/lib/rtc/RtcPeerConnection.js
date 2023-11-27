@@ -1,31 +1,7 @@
 import {getConnectedMediaDevices} from './RtcUtils'
-import CustomEventDispatcher from "../CustomEventDispatcher";
-import {MessagingEnums} from "../../model/index.js";
-
-const WEBRTC_ICE_CONFIGURATION = {
-    "iceServers": [{"urls": "stun:turn.demisco.com:5349"},
-        {
-            "urls": "turn:turn.demisco.com:5349",
-            "credential": "turn",
-            "username": "turn"
-        }]
-}
-const WEBRTC_MEDIA_STREAM_CONSTRAINTS = {
-    'video': {
-        width: {min: 160, ideal: 320, max: 640},
-        height: {min: 120, ideal: 240, max: 480},
-        frameRate: {min: 16, max: 24}
-    },
-    'audio': {
-        echoCancellation: true,
-        noiseSuppression: true,
-    }
-}
-const WEBRTC_OFFER_OPTIONS = {
-    iceRestart: true,
-    offerToReceiveAudio: true,
-    offerToReceiveVideo: true
-}
+import CustomEventDispatcher from "../CustomEventDispatcher"
+import {MessagingEnums} from "../../model/index.js"
+import ApplicationConfig from "../../ApplicationConfig.js"
 
 let rtcConnection = null
 let localMediaStream = null
@@ -44,6 +20,10 @@ const closeRtcPeerConnection = () => {
             element.srcObject = null
         }
     })
+    if (localMediaStream) {
+        localMediaStream.getTracks().forEach(track => track.stop());
+        localMediaStream = null
+    }
     if (rtcConnection) {
         // Stop all transceivers on the connection
         rtcConnection.getTransceivers().forEach(transceiver => {
@@ -58,7 +38,6 @@ const closeRtcPeerConnection = () => {
 
         rtcConnection.close()
         rtcConnection = null
-        localMediaStream = null
         console.debug('rtcConnection closed.')
     }
 }
@@ -69,7 +48,8 @@ const createRtcConnection = () => {
         alert("rtcConnection is exists.")
         throw new Error("rtcConnection is exists.")
     }
-    let newConnection = new RTCPeerConnection(WEBRTC_ICE_CONFIGURATION)
+    let {rtcConfig} = ApplicationConfig.getWebRtcConfig()
+    let newConnection = new RTCPeerConnection(rtcConfig)
     newConnection.onicecandidate = ({candidate}) => {
         if (candidate) {
             communicationService.sendRtcEvent('CANDIDATE', candidate)
@@ -97,10 +77,7 @@ const createRtcConnection = () => {
                 communicationService.endCall()
                 break;
         }
-        console.debug('onconnectionstatechange >> ', connectionState)
-        publishApplicationEvent(MessagingEnums.ApplicationEvents.CALL_STATE_CHANGE, {
-            state: connectionState
-        })
+        publishRtcConnectionState(connectionState)
     }
     return newConnection
 }
@@ -109,7 +86,8 @@ const initRtcPeerConnection = async () => {
     console.debug('initRtcPeerConnection')
     closeRtcPeerConnection()
     rtcConnection = createRtcConnection()
-    const connectedMediaDevices = await getConnectedMediaDevices(WEBRTC_MEDIA_STREAM_CONSTRAINTS);
+    let {mediaStreamConstraints} = ApplicationConfig.getWebRtcConfig()
+    const connectedMediaDevices = await getConnectedMediaDevices(mediaStreamConstraints);
     return navigator.mediaDevices.getUserMedia(connectedMediaDevices).then(mediaStream => {
         localMediaStream = mediaStream
         if (connectedMediaDevices.video) {
@@ -123,14 +101,14 @@ const initRtcPeerConnection = async () => {
         for (const track of mediaStreamTracks) {
             rtcConnection.addTrack(track, mediaStream)
         }
-
         return rtcConnection
     }).catch(handleRtcErrors)
 }
 
 function sendOffer() {
     console.debug('signalingState, sendOffer >>', rtcConnection.signalingState)
-    rtcConnection.createOffer(WEBRTC_OFFER_OPTIONS).then(offer => {
+    let {offerOptions} = ApplicationConfig.getWebRtcConfig()
+    rtcConnection.createOffer(offerOptions).then(offer => {
         rtcConnection.setLocalDescription(offer).then(() => sendRtcEvent('OFFER', offer))
     }).catch(handleRtcErrors)
 }
@@ -213,8 +191,9 @@ function sendRtcEvent(state, rtcObject) {
     communicationService.sendRtcEvent(state, rtcObject)
 }
 
-function publishApplicationEvent(eventCode, detail) {
-    CustomEventDispatcher.dispatchEvent(eventCode, detail)
+function publishRtcConnectionState(connectionState) {
+    console.debug('rtcConnection.state >> ', connectionState)
+    CustomEventDispatcher.dispatchEvent(MessagingEnums.ApplicationEvents.CALL_STATE_CHANGE, connectionState)
 }
 
 const handleRtcErrors = error => {
@@ -227,8 +206,8 @@ const handleRtcErrors = error => {
     } else {
         errorMessage = error
     }
-    alert(errorMessage);
-    //throw error
+
+    CustomEventDispatcher.dispatchEvent(MessagingEnums.ApplicationEvents.THROW_EXCEPTION, {error: errorMessage})
 }
 export {
     initRtcPeerConnection,

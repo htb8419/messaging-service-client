@@ -11,22 +11,38 @@ const _DEFAULT_MESSAGING_SERVICE_OPTIONS = {
         heartbeatOutgoing: 20000
     },
     webRtc: {
-        audioElementId: 'webrtc-audio',
-        localVideoElementId: 'localVideo',
-        remoteVideoElementId: 'remoteVideo',
-        turnServerConfiguration: {
+        rtcConfig: {
             "iceServers": [{"urls": "stun:turn.demisco.com:5349"},
                 {
                     "urls": "turn:turn.demisco.com:5349",
                     "credential": "turn",
                     "username": "turn"
                 }]
+        },
+        mediaStreamConstraints: {
+            'video': {
+                width: {min: 160, ideal: 320, max: 640},
+                height: {min: 120, ideal: 240, max: 480},
+                frameRate: {min: 10, ideal: 16, max: 20}
+            },
+            'audio': {
+                echoCancellation: true,
+                noiseSuppression: true,
+            }
+        },
+        offerOptions: {
+            offerToReceiveAudio: true,
+            offerToReceiveVideo: true
         }
     }
 }
 
 class ApplicationConfig {
 
+    static getWebRtcConfig(){
+        let {webRtc}=window.$applicationConfig
+        return webRtc
+    }
     static getConfig() {
         return window.$applicationConfig
     }

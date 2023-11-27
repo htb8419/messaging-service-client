@@ -11,13 +11,11 @@ class MessageChanel {
         this.syncIntervalId = null;
         this.stompClient = stompClient
         this.messageQueue = new MessageQueue()
-        let {sessionId} = SecurityContextHolder.getCurrentContext()
-        stompClient.subscribe(`/user/${sessionId}/queue/event`, this.receive, {'ack': 'client'})
-        stompClient.subscribe(`/user/${sessionId}/queue/im`, this.receive, {'ack': 'client'})
+
     }
 
     send = (message) => {
-        //MessageValidator.validate(message);
+        //
         if (message.messageType === 'EVENT') {
             this._sendMessage(message, "/app/event")
         } else {
@@ -25,14 +23,6 @@ class MessageChanel {
             this.enable()
         }
     }
-
-    receive = (inputMessage) => {
-        inputMessage.ack()
-        let payload = JSON.parse(inputMessage.body)
-        let message = {isMessageOut: false, ...payload}
-        CustomEventDispatcher.dispatchEvent(MessagingEnums.ApplicationEvents.RECEIVED_MESSAGE, {message})
-    }
-
     enable = () => {
         if (!this.syncIntervalId) {
             const SYNC_MESSAGE_QUEUE_INTERVAL = 100;
@@ -77,8 +67,7 @@ class MessageChanel {
             [MessagingEnums.MessageHeaders.MESSAGE_SENT_TIME]: Date.now(),
             [MessagingEnums.MessageHeaders.CONTENT_TYPE]: 'application/json'
         }
-        this.stompClient.send(destination, headers, JSON.stringify(message))
-        //this.stompClient.publish({destination, body: JSON.stringify(message), headers});
+        this.stompClient.send(destination, headers, JSON. stringify(message))
     }
 }
 
