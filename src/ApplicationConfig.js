@@ -23,7 +23,7 @@ const _DEFAULT_MESSAGING_SERVICE_OPTIONS = {
             'video': {
                 width: {min: 160, ideal: 320, max: 640},
                 height: {min: 120, ideal: 240, max: 480},
-                frameRate: {min: 10, ideal: 16, max: 20}
+                frameRate: {min: 10, ideal: 16, max: 24}
             },
             'audio': {
                 echoCancellation: true,
@@ -39,10 +39,11 @@ const _DEFAULT_MESSAGING_SERVICE_OPTIONS = {
 
 class ApplicationConfig {
 
-    static getWebRtcConfig(){
-        let {webRtc}=window.$applicationConfig
+    static getWebRtcConfig() {
+        let {webRtc} = window.$applicationConfig
         return webRtc
     }
+
     static getConfig() {
         return window.$applicationConfig
     }
