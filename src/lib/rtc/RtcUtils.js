@@ -26,7 +26,7 @@ async function getConnectedMediaDevices(requestedMedia) {
         }
     }
     console.debug('requestedMedia:',requestedMedia,'connectedMediaDevices:', connectedMediaDevices)
-    return requestedMedia
+    return connectedMediaDevices
 }
 
 /*

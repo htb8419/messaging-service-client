@@ -1,5 +1,5 @@
-import {CustomEventDispatcher, FileUploader, MessageBuilder} from "./lib"
-import {MessagingEnums, UIEvents} from "./model";
+import {CustomEventDispatcher, MessageBuilder} from "./lib"
+import {MessagingEnums} from "./model";
 import createStompClient from "./lib/createStompClient.js";
 import SecurityContextHolder from "./lib/SecurityContextHolder.js";
 import uploadFile from "./lib/uploadFile.js";
@@ -17,8 +17,8 @@ class MessageService {
             this._subscribe()
         }
         CustomEventDispatcher.dispatchEvent(MessagingEnums.ApplicationEvents.CONNECTION_STATE_CHANGE, {
-            connected: state === MessagingEnums.ConnectionStates.CONNECTED,
-            state
+            state,
+            connected: state === MessagingEnums.ConnectionStates.CONNECTED
         })
     }
 
@@ -28,7 +28,6 @@ class MessageService {
     buildInstantMessage = async (roomId, text, fileItem) => {
         if (fileItem) {
             return uploadFile(fileItem).then(fileInfo => {
-                console.debug('fileInfo >> ',fileInfo)
                 return this.messageBuilder.instantMessage(roomId, null, fileInfo)
             })
         }
@@ -41,10 +40,6 @@ class MessageService {
             [MessagingEnums.MessageHeaders.CONTENT_TYPE]: 'application/json'
         }
         //Todo , do validate before send message
-        /*MessageValidator.validate({
-            headers,
-            payload
-        });*/
         this.stompClient.send(destination, headers, JSON.stringify(payload))
         return Promise.resolve(payload)
     }

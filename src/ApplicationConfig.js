@@ -31,6 +31,7 @@ const _DEFAULT_MESSAGING_SERVICE_OPTIONS = {
             }
         },
         offerOptions: {
+            iceRestart: true,
             offerToReceiveAudio: true,
             offerToReceiveVideo: true
         }
@@ -40,8 +41,7 @@ const _DEFAULT_MESSAGING_SERVICE_OPTIONS = {
 class ApplicationConfig {
 
     static getWebRtcConfig() {
-        let {webRtc} = window.$applicationConfig
-        return webRtc
+        return _DEFAULT_MESSAGING_SERVICE_OPTIONS.webRtc
     }
 
     static getConfig() {

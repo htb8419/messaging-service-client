@@ -48,8 +48,8 @@ const createRtcConnection = () => {
         alert("rtcConnection is exists.")
         throw new Error("rtcConnection is exists.")
     }
-    let {rtcConfig} = ApplicationConfig.getWebRtcConfig()
-    let newConnection = new RTCPeerConnection(rtcConfig)
+    let webRtcConfig = ApplicationConfig.getWebRtcConfig()
+    let newConnection = new RTCPeerConnection(webRtcConfig.rtcConfig)
     newConnection.onicecandidate = ({candidate}) => {
         if (candidate) {
             communicationService.sendRtcEvent('CANDIDATE', candidate)
@@ -86,14 +86,12 @@ const initRtcPeerConnection = async () => {
     console.debug('initRtcPeerConnection')
     closeRtcPeerConnection()
     rtcConnection = createRtcConnection()
-    let {mediaStreamConstraints} = ApplicationConfig.getWebRtcConfig()
-    const connectedMediaDevices = await getConnectedMediaDevices(mediaStreamConstraints);
+    let webRtcConfig = ApplicationConfig.getWebRtcConfig()
+    const connectedMediaDevices = await getConnectedMediaDevices(webRtcConfig.mediaStreamConstraints);
     return navigator.mediaDevices.getUserMedia(connectedMediaDevices).then(mediaStream => {
         localMediaStream = mediaStream
-        if (connectedMediaDevices.video) {
-            let localElement = document.querySelector('video#localVideo')
-            localElement.srcObject = mediaStream
-        }
+        let localElement = document.querySelector('video#localVideo')
+        localElement.srcObject = mediaStream
         let mediaStreamTracks = mediaStream.getTracks();
         if (!mediaStreamTracks || mediaStreamTracks.length < 1) {
             throw new Error('call error')
@@ -107,8 +105,8 @@ const initRtcPeerConnection = async () => {
 
 function sendOffer() {
     console.debug('signalingState, sendOffer >>', rtcConnection.signalingState)
-    let {offerOptions} = ApplicationConfig.getWebRtcConfig()
-    rtcConnection.createOffer(offerOptions).then(offer => {
+    let webRtcConfig = ApplicationConfig.getWebRtcConfig()
+    rtcConnection.createOffer(webRtcConfig.offerOptions).then(offer => {
         rtcConnection.setLocalDescription(offer).then(() => sendRtcEvent('OFFER', offer))
     }).catch(handleRtcErrors)
 }
