@@ -16,7 +16,7 @@ class CommunicationClient {
         CustomEventDispatcher.registerEventListener(MessagingEnums.ApplicationEvents.RECEIVED_MESSAGE, this._handleAppEvents)
         CustomEventDispatcher.registerEventListener(MessagingEnums.ApplicationEvents.CALL_STATE_CHANGE, this._handleAppEvents)
         CustomEventDispatcher.registerEventListener(MessagingEnums.ApplicationEvents.THROW_EXCEPTION, this._handleAppEvents)
-        //TODO
+
         this.messageService = new StompClient()
         window.communicationService = this
     }

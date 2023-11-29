@@ -181,7 +181,7 @@ function sendRtcEvent(state, rtcObject) {
 
 function publishRtcConnectionState(connectionState) {
     console.debug('rtcConnection.state >> ', connectionState)
-    CustomEventDispatcher.dispatchEvent(MessagingEnums.ApplicationEvents.CALL_STATE_CHANGE, connectionState)
+    CustomEventDispatcher.dispatchEvent(MessagingEnums.ApplicationEvents.CALL_STATE_CHANGE, {state: connectionState})
 }
 
 const handleRtcErrors = error => {
