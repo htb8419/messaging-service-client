@@ -43,32 +43,27 @@ const closeRtcPeerConnection = () => {
 }
 
 const createRtcConnection = () => {
-    console.debug('create new RtcPeerConnection')
     if (rtcConnection) {
         alert("rtcConnection is exists.")
         throw new Error("rtcConnection is exists.")
     }
     let webRtcConfig = ApplicationConfig.getWebRtcConfig()
-    let newConnection = new RTCPeerConnection(webRtcConfig.rtcConfig)
-    newConnection.onicecandidate = ({candidate}) => {
+    rtcConnection = new RTCPeerConnection(webRtcConfig.rtcConfig)
+    rtcConnection.onicecandidate = ({candidate}) => {
         if (candidate) {
-            communicationService.sendRtcEvent('CANDIDATE', candidate)
+            sendRtcEvent('CANDIDATE', candidate)
         }
     }
-    newConnection.addEventListener('track', (e) => {
-        let remoteVideo = document.querySelector('video#remoteVideo')
-        remoteVideo.srcObject = e.streams[0]
-    }, false)
-    newConnection.onsignalingstatechange = (event) => {
-        console.debug("onsignalingstatechange >> ", event.target.signalingState);
-        switch (event.target.signalingState) {
-            case "stable":
-                console.debug("ICE negotiation complete")
-                break;
+    rtcConnection.addEventListener('track', ({track, streams}) => {
+        let remoteElement = document.getElementById('remoteVideo')
+        if (remoteElement.srcObject === streams[0]) {
+            remoteElement.srcObject.addTrack(track)
+        } else {
+            remoteElement.srcObject = streams[0]
         }
-    }
-    newConnection.onconnectionstatechange = (event) => {
-        let connectionState = event.target.connectionState
+    })
+    rtcConnection.onconnectionstatechange = () => {
+        let connectionState = rtcConnection.connectionState
         switch (connectionState) {
             case "disconnected":
             case "failed":
@@ -79,19 +74,12 @@ const createRtcConnection = () => {
         }
         publishRtcConnectionState(connectionState)
     }
-    return newConnection
 }
 
 const initRtcPeerConnection = async () => {
-    console.debug('initRtcPeerConnection')
     closeRtcPeerConnection()
-    rtcConnection = createRtcConnection()
-    let webRtcConfig = ApplicationConfig.getWebRtcConfig()
-    const connectedMediaDevices = await getConnectedMediaDevices(webRtcConfig.mediaStreamConstraints);
-    return navigator.mediaDevices.getUserMedia(connectedMediaDevices).then(mediaStream => {
-        localMediaStream = mediaStream
-        let localElement = document.querySelector('video#localVideo')
-        localElement.srcObject = mediaStream
+    createRtcConnection()
+    return getUserMediaDevices().then(mediaStream => {
         let mediaStreamTracks = mediaStream.getTracks();
         if (!mediaStreamTracks || mediaStreamTracks.length < 1) {
             throw new Error('call error')
@@ -99,33 +87,35 @@ const initRtcPeerConnection = async () => {
         for (const track of mediaStreamTracks) {
             rtcConnection.addTrack(track, mediaStream)
         }
+        localMediaStream = mediaStream
+        let localElement = document.querySelector('video#localVideo')
+        localElement.srcObject = mediaStream
         return rtcConnection
     }).catch(handleRtcErrors)
 }
 
 function sendOffer() {
-    console.debug('signalingState, sendOffer >>', rtcConnection.signalingState)
-    let webRtcConfig = ApplicationConfig.getWebRtcConfig()
-    rtcConnection.createOffer(webRtcConfig.offerOptions).then(offer => {
+    rtcConnection.createOffer({
+        iceRestart: true,
+        offerToReceiveAudio: true,
+        offerToReceiveVideo: true
+    }).then(offer => {
         rtcConnection.setLocalDescription(offer).then(() => sendRtcEvent('OFFER', offer))
     }).catch(handleRtcErrors)
 }
 
 function onOffer(offer) {
-    console.debug('signalingState, onOffer >>', rtcConnection.signalingState)
     rtcConnection.setRemoteDescription(new RTCSessionDescription(offer))
         .then(() => {
             rtcConnection.createAnswer().then((answer) => {
-                console.debug('signalingState, createdAnswer >>', rtcConnection.signalingState)
                 rtcConnection.setLocalDescription(answer).then(() => sendRtcEvent('ANSWER', answer))
             }).catch(handleRtcErrors)
         }).catch(handleRtcErrors)
 }
 
 function onRTCIceCandidate(iceCandidate) {
-    console.debug('signalingState, onRTCIceCandidate >>', rtcConnection.signalingState)
     if (iceCandidate && rtcConnection && rtcConnection.currentRemoteDescription) {
-        rtcConnection.addIceCandidate(iceCandidate).catch(handleRtcErrors)
+        rtcConnection.addIceCandidate(new RTCIceCandidate(iceCandidate)).catch(handleRtcErrors)
     }
 }
 
@@ -207,6 +197,13 @@ const handleRtcErrors = error => {
 
     CustomEventDispatcher.dispatchEvent(MessagingEnums.ApplicationEvents.THROW_EXCEPTION, {error: errorMessage})
 }
+
+async function getUserMediaDevices() {
+    let webRtcConfig = ApplicationConfig.getWebRtcConfig()
+    return getConnectedMediaDevices(webRtcConfig.mediaStreamConstraints)
+        .then(connectedMediaDevices => navigator.mediaDevices.getUserMedia(connectedMediaDevices))
+}
+
 export {
     initRtcPeerConnection,
     handleRtcEvents,

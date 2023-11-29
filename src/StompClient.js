@@ -1,19 +1,18 @@
 import {CustomEventDispatcher, MessageBuilder} from "./lib"
 import {MessagingEnums} from "./model";
-import createStompClient from "./lib/createStompClient.js";
 import SecurityContextHolder from "./lib/SecurityContextHolder.js";
 import uploadFile from "./lib/uploadFile.js";
+import ApplicationConfig from "./ApplicationConfig.js";
 
-class MessageService {
+class StompClient {
 
     constructor() {
         this.messageBuilder = new MessageBuilder();
-        createStompClient(this.connectionStateChangeCallback)
+        this.tryConnect()
     }
 
-    connectionStateChangeCallback = (stompClient, state) => {
+    connectionStateChangeCallback = (state) => {
         if (MessagingEnums.ConnectionStates.CONNECTED === state) {
-            this.stompClient = stompClient
             this._subscribe()
         }
         CustomEventDispatcher.dispatchEvent(MessagingEnums.ApplicationEvents.CONNECTION_STATE_CHANGE, {
@@ -54,8 +53,37 @@ class MessageService {
         let payload = JSON.parse(msg.body)
         CustomEventDispatcher.dispatchEvent(MessagingEnums.ApplicationEvents.RECEIVED_MESSAGE, {isMessageOut: false, ...payload})
     }
+    createClient = () => {
+        let {socketUrl} = ApplicationConfig.getConfig()
+        let {accessToken, sessionId} = SecurityContextHolder.getCurrentContext()
+        const brokerURL = `${socketUrl}/websocket?access_token=${accessToken}&sid=${sessionId}`
+        this.stompClient = window.Stomp.client(brokerURL)
+        this.stompClient.debug = (msg) => {
+            console.debug('$stomp: ',msg)
+        }
+    }
+
+    tryConnect = (retryCount = 0) => {
+        if (!this.stompClient) {
+            this.createClient()
+        }
+        const maxAttempts = 10, reconnectDelay = 3000
+        console.debug('try connect to server, retryCount=', retryCount, ' maxAttempts=', maxAttempts)
+        this.connectionStateChangeCallback(MessagingEnums.ConnectionStates.CONNECTING)
+        this.stompClient.connect({"heart-beat": "10000,10000"}, () => {
+            this.connectionStateChangeCallback(MessagingEnums.ConnectionStates.CONNECTED)
+        }, () => {
+            if (retryCount++ < maxAttempts) {
+                setTimeout(() => {
+                    this.tryConnect(retryCount)
+                }, reconnectDelay)
+            } else {
+                this.connectionStateChangeCallback(MessagingEnums.ConnectionStates.DISCONNECTED)
+            }
+        })
+    }
 
 }
 
 
-export default MessageService
+export default StompClient

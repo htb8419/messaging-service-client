@@ -34,12 +34,9 @@ async function getUserMediaDevices(mediaStreamConstraints) {
     return getMediaStreamConstraints(mediaStreamConstraints)
         .then((constraints) => navigator.mediaDevices.getUserMedia(constraints))
 }*/
-async function getUserMediaDevices(mediaStreamConstraints) {
-    return navigator.mediaDevices.getUserMedia(mediaStreamConstraints)
-}
+
 
 export {
-    getUserMediaDevices,
     getMediaDeviceInfo,
     getConnectedMediaDevices,
     existsConnectedDevices

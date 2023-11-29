@@ -1,4 +1,3 @@
-import MessageService from './MessageService'
 import ApplicationConfig from "./ApplicationConfig"
 import MessagingEnums from './model/MessagingEnums'
 import CommunicationClient from './CommunicationClient.js'

@@ -5,7 +5,7 @@ import * as webRTc from "./lib/rtc/RtcPeerConnection.js";
 import {CustomEventDispatcher} from "./lib";
 import MessagingEnums from "./model/MessagingEnums";
 import ApplicationConfig from "./ApplicationConfig.js";
-import MessageService from "./MessageService.js";
+import StompClient from "./StompClient.js";
 import {UIEvents} from "./model/index.js";
 
 class CommunicationClient {
@@ -17,7 +17,7 @@ class CommunicationClient {
         CustomEventDispatcher.registerEventListener(MessagingEnums.ApplicationEvents.CALL_STATE_CHANGE, this._handleAppEvents)
         CustomEventDispatcher.registerEventListener(MessagingEnums.ApplicationEvents.THROW_EXCEPTION, this._handleAppEvents)
         //TODO
-        this.messageService = new MessageService()
+        this.messageService = new StompClient()
         window.communicationService = this
     }
 

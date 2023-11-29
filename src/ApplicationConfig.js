@@ -21,9 +21,9 @@ const _DEFAULT_MESSAGING_SERVICE_OPTIONS = {
         },
         mediaStreamConstraints: {
             'video': {
-                width: {min: 160, ideal: 320, max: 640},
-                height: {min: 120, ideal: 240, max: 480},
-                frameRate: {min: 10, ideal: 16, max: 24}
+                width: {min: 320, ideal: 640, max: 960},
+                height: {min: 240, ideal: 480, max: 720},
+                frameRate: {min: 16, max: 24}
             },
             'audio': {
                 echoCancellation: true,
