@@ -75,7 +75,6 @@ class CommunicationClient {
 
     //  ***   Handle Events   ***
     _handleAppEvents = ({type: eventType, detail}) => {
-        console.debug(`eventType=${eventType}, detail=`, detail)
         let appEventDetail = detail
         let {ApplicationEvents} = MessagingEnums
         if (eventType === ApplicationEvents.RECEIVED_MESSAGE) {

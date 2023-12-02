@@ -6,13 +6,15 @@ import ApplicationConfig from "../../ApplicationConfig.js"
 let rtcConnection = null
 let localMediaStream = null
 let _localVideoPlayPromise = null
+let webRtcConnectionTimeout = null
+let webRtcAutoReconnect = 0
+let webRtcCallee = false;
 
 const closeRtcPeerConnection = () => {
     const WEB_RTC_HTML_ELEMENTS = ['video#remoteVideo', 'video#localVideo']
     WEB_RTC_HTML_ELEMENTS.forEach(selector => {
         let element = document.querySelector(selector)
-        if (element.srcObject) {
-            console.debug('selector =', selector, ' stopping stream tracks')
+        if (element && element.srcObject) {
             element.srcObject.getTracks().forEach(track => track.stop())
             if (!element.paused) {
                 element.pause()
@@ -35,11 +37,10 @@ const closeRtcPeerConnection = () => {
         rtcConnection.onsignalingstatechange = null;
         rtcConnection.onicegatheringstatechange = null;
         rtcConnection.onnotificationneeded = null;
-
         rtcConnection.close()
         rtcConnection = null
-        console.debug('rtcConnection closed.')
     }
+    webRtcCallee = false
 }
 
 const createRtcConnection = () => {
@@ -65,6 +66,10 @@ const createRtcConnection = () => {
     rtcConnection.onconnectionstatechange = () => {
         let connectionState = rtcConnection.connectionState
         switch (connectionState) {
+            case "connected":
+                stopWebRtcReconnect()
+                webRtcAutoReconnect = 0
+                break
             case "disconnected":
             case "failed":
             case "closed":
@@ -77,6 +82,7 @@ const createRtcConnection = () => {
 }
 
 const initRtcPeerConnection = async () => {
+    console.debug('initRtcPeerConnection')
     closeRtcPeerConnection()
     createRtcConnection()
     return getUserMediaDevices().then(mediaStream => {
@@ -124,15 +130,21 @@ function onAnswer(answer) {
 }
 
 const handleRtcEvents = (eventType, rtcObject) => {
-    console.debug('handleRtcEvents >', eventType)
+    console.debug('webRtcEvents=',eventType,', webRtcCallee=',webRtcCallee)
     switch (eventType) {
         case 'CALL_REQUEST':
-            initRtcPeerConnection().then(() => {
-                sendRtcEvent('CALL_ACCEPTED', {})
-            })
+            if (!webRtcCallee) {
+                webRtcCallee = true
+                initRtcPeerConnection().then(() => {
+                    sendRtcEvent('CALL_ACCEPTED', {})
+                })
+            }
             break
         case 'CALL_ACCEPTED':
-            sendOffer()
+            if (!webRtcCallee) {
+                sendOffer()
+                webRtcConnectionTimeout = setTimeout(webRtcReconnect, 3000)
+            }
             break
         case 'OFFER':
             onOffer(rtcObject)
@@ -182,6 +194,21 @@ function sendRtcEvent(state, rtcObject) {
 function publishRtcConnectionState(connectionState) {
     console.debug('rtcConnection.state >> ', connectionState)
     CustomEventDispatcher.dispatchEvent(MessagingEnums.ApplicationEvents.CALL_STATE_CHANGE, {state: connectionState})
+}
+
+function webRtcReconnect() {
+    stopWebRtcReconnect()
+    communicationService.endCall()
+    if (webRtcAutoReconnect++ < 1) {
+        communicationService.makeCall()
+    }
+}
+
+function stopWebRtcReconnect() {
+    if (webRtcConnectionTimeout) {
+        clearTimeout(webRtcConnectionTimeout)
+        webRtcConnectionTimeout = null
+    }
 }
 
 const handleRtcErrors = error => {

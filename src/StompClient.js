@@ -58,9 +58,7 @@ class StompClient {
         let {accessToken, sessionId} = SecurityContextHolder.getCurrentContext()
         const brokerURL = `${socketUrl}/websocket?access_token=${accessToken}&sid=${sessionId}`
         this.stompClient = window.Stomp.client(brokerURL)
-        this.stompClient.debug = (msg) => {
-            console.debug('$stomp: ',msg)
-        }
+        this.stompClient.debug = (msg) => {}//console.debug('$stomp: ', msg)
     }
 
     tryConnect = (retryCount = 0) => {
@@ -68,7 +66,7 @@ class StompClient {
             this.createClient()
         }
         const maxAttempts = 10, reconnectDelay = 3000
-        console.debug('try connect to server, retryCount=', retryCount, ' maxAttempts=', maxAttempts)
+        //console.debug('try connect to server, retryCount=', retryCount, ' maxAttempts=', maxAttempts)
         this.connectionStateChangeCallback(MessagingEnums.ConnectionStates.CONNECTING)
         this.stompClient.connect({"heart-beat": "10000,10000"}, () => {
             this.connectionStateChangeCallback(MessagingEnums.ConnectionStates.CONNECTED)
