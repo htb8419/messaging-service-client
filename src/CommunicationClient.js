@@ -1,14 +1,13 @@
 //require for webrtc shim
-import adapter from 'webrtc-adapter';
+import adapter from 'webrtc-adapter'
 
-import * as webRTc from "./lib/rtc/RtcPeerConnection.js";
-import {CustomEventDispatcher} from "./lib";
-import MessagingEnums from "./model/MessagingEnums";
-import ApplicationConfig from "./ApplicationConfig.js";
-import StompClient from "./StompClient.js";
-import {UIEvents} from "./model/index.js";
-import getParticipantsState from "./lib/getParticipantsState.js";
-import SecurityContextHolder from "./lib/SecurityContextHolder.js";
+import * as webRTc from "./lib/rtc/RtcPeerConnection.js"
+import {CustomEventDispatcher} from "./lib"
+import MessagingEnums from "./model/MessagingEnums"
+import ApplicationConfig from "./ApplicationConfig.js"
+import StompClient from "./StompClient.js"
+import {UIEvents} from "./model/index.js"
+import getParticipantsState from "./lib/getParticipantsState.js"
 
 class CommunicationClient {
 

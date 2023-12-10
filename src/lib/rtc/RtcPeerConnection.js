@@ -15,17 +15,16 @@ const closeRtcPeerConnection = () => {
     WEB_RTC_HTML_ELEMENTS.forEach(selector => {
         let element = document.querySelector(selector)
         if (element && element.srcObject) {
-            element.srcObject.getTracks().forEach(track => track.stop())
             if (!element.paused) {
                 element.pause()
             }
+            stopMediaStreamTracks(element.srcObject)
             element.srcObject = null
         }
     })
-    if (localMediaStream) {
-        localMediaStream.getTracks().forEach(track => track.stop());
-        localMediaStream = null
-    }
+    stopMediaStreamTracks(localMediaStream)
+    localMediaStream = null
+
     if (rtcConnection) {
         // Stop all transceivers on the connection
         rtcConnection.getTransceivers().forEach(transceiver => {
@@ -178,17 +177,22 @@ function pauseLocalVideo() {
     }
     if (_localVideoPlayPromise) {
         _localVideoPlayPromise.finally(() => {
-            if (localVideo.srcObject) {
-                localVideo.srcObject.getTracks().forEach(track => {
-                    track.stop()
-                })
-            }
+            stopMediaStreamTracks(localVideo.srcObject)
             localVideo.pause()
             _localVideoPlayPromise = null
         })
     } else {
         localVideo.pause()
     }
+}
+
+function stopMediaStreamTracks(mediaStream) {
+    if (!mediaStream) {
+        return
+    }
+    mediaStream.getTracks().forEach(track => {
+        track.stop()
+    })
 }
 
 function canStartRtcCall() {
@@ -208,10 +212,10 @@ function sendRtcEvent(state, rtcObject) {
 }
 
 function publishRtcConnectionState(connectionState) {
-    console.debug('call state changed >> ', connectionState
-        , ' signalingState=', rtcConnection.signalingState
-        , ' connectionState=', rtcConnection.connectionState
-        , ' iceConnectionState=', rtcConnection.iceConnectionState)
+    console.debug('call_state_changed >> ', connectionState
+        , ' signalingState=', (rtcConnection && rtcConnection.signalingState)
+        , ' connectionState=', (rtcConnection && rtcConnection.connectionState)
+        , ' iceConnectionState=', (rtcConnection && rtcConnection.iceConnectionState))
     CustomEventDispatcher.dispatchEvent(MessagingEnums.ApplicationEvents.CALL_STATE_CHANGE, {state: connectionState})
 }
 
