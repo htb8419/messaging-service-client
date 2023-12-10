@@ -16,11 +16,15 @@ class XhrRequest {
 
 function sendRequest(path, method, data, headers = {}) {
     let {serverUrl} = ApplicationConfig.getConfig()
-    let {accessToken} = SecurityContextHolder.getCurrentContext()
+    try {
+        let {accessToken} = SecurityContextHolder.getCurrentContext()
 
-    if (!headers['Authorization']) {
-        headers["Authorization"] = `bearer ${accessToken}`
+        if (!headers['Authorization']) {
+            headers["Authorization"] = `bearer ${accessToken}`
+        }
+    } catch (ignored) {
     }
+
     let url = path.startsWith("/") ? `${serverUrl}${path}` : path
     let fetchOptions = {
         credentials: "include",
@@ -35,32 +39,35 @@ function sendRequest(path, method, data, headers = {}) {
     }
     const abortController = new AbortController();
     const timeoutId = setTimeout(() => abortController.abort(), 5000);
-    return fetch(url, {...fetchOptions, signal: abortController.signal}).then(response => {
-        clearTimeout(timeoutId)
+    return fetch(url, {...fetchOptions, signal: abortController.signal})
+        .then(response => {
         if (!response || !response.status) {
             return response
         }
         if (response.ok && response.status === 200) {
-            const contentType = response.headers.get(XhrRequest.CONTENT_TYPE_HEADER_KEY);
-            return (contentType && contentType.toLowerCase().indexOf(XhrRequest.APPLICATION_JSON) !== -1) ?
-                response.json()
-                : response
-        } else if (response.status === 401) {
+            /*const contentType = response.headers.get(XhrRequest.CONTENT_TYPE_HEADER_KEY);
+            if(contentType && contentType.toLowerCase().indexOf(XhrRequest.APPLICATION_JSON) === -1)
+            {
+                throw new Error('expect application-json as response type ');
+            }*/
             return response.json()
+        }else if(response.status === 401){
+            throw new Error('Access Denied!')
         }
-        // throw new Error('Something went wrong.');
-    }).then((response) => {
-        let {payload, errors} = response
+        throw new Error('Something went wrong.');
+    }).then(response => {
+        let {payload, messages: errors} = response
         if (Array.isArray(errors) && errors.length > 0) {
             throw errors[0]
         }
         return payload ? payload : response;
     }).catch(e => {
-        clearTimeout(timeoutId)
         /*EventDispatcher.dispatchEvent(EventTypes.SERVER_EXCEPTION,
             {blocking: false, errorMessage: 'network error'});*/
-        throw  e
-    })
+        throw e
+    }).finally(()=>{
+            clearTimeout(timeoutId)
+        })
 }
 
 export default XhrRequest

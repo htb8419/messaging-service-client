@@ -10,7 +10,6 @@ class SecurityContextHolder {
             sessionId
         }
     }
-
     static getAccessToken() {
         return SecurityContextHolder.getCurrentContext().accessToken
     }

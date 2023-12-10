@@ -5,7 +5,7 @@ import json from "@rollup/plugin-json";
 import commonjs from '@rollup/plugin-commonjs';
 
 const extensions = ['.js', '.jsx', '.ts', '.tsx', ".json"];
-const isDevelopment =false //!!process.env.ROLLUP_WATCH;
+const isDevelopment =true //!!process.env.ROLLUP_WATCH;
 console.log('rollup is development mod > ', isDevelopment)
 export default [
     {

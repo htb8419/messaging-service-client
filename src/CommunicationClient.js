@@ -7,6 +7,8 @@ import MessagingEnums from "./model/MessagingEnums";
 import ApplicationConfig from "./ApplicationConfig.js";
 import StompClient from "./StompClient.js";
 import {UIEvents} from "./model/index.js";
+import getParticipantsState from "./lib/getParticipantsState.js";
+import SecurityContextHolder from "./lib/SecurityContextHolder.js";
 
 class CommunicationClient {
 
@@ -21,6 +23,16 @@ class CommunicationClient {
         window.communicationService = this
     }
 
+    getParticipantsState = async () => {
+        return getParticipantsState(this.roomId)
+    }
+    disconnect = () => {
+        webRTc.closeRtcPeerConnection()
+        this.changePresenceState(MessagingEnums.UserPresenceState.OFFLINE).then(() => {
+            this.messageService.disconnect()
+            window.communicationService = null
+        })
+    }
     sendEvent = async (eventType, payload) => {
         return this.messageService.buildEventMessage(this.roomId, eventType, payload).then(this.messageService.sendMessage)
     }
@@ -30,14 +42,20 @@ class CommunicationClient {
     }
 
     makeCall = () => {
-        webRTc.initRtcPeerConnection().then(() => {
-            this.sendRtcEvent(MessagingEnums.webRtcEvents.CALL_REQUEST, {})
-        })
+        if (webRTc.canStartRtcCall()) {
+            webRTc.initRtcPeerConnection().then(() => {
+                this.sendRtcEvent(MessagingEnums.webRtcEvents.CALL_REQUEST, {})
+            })
+        }
     }
 
-    endCall = () => {
+    endCall = (forceCloseSession = false) => {
         webRTc.closeRtcPeerConnection()
-        this.sendRtcEvent(MessagingEnums.webRtcEvents.END_CALL, {})
+        this.sendRtcEvent(MessagingEnums.webRtcEvents.END_CALL, {forceCloseSession}).then(() => {
+            if (forceCloseSession) {
+                this.messageService.disconnect()
+            }
+        })
     }
 
     playLocalMedia = () => {
@@ -61,7 +79,7 @@ class CommunicationClient {
     }
 
     changePresenceState = (presence) => {
-        this.sendEvent(MessagingEnums.EventMessageTypes.CHANGE_PRESENCE_STATUS, {presence})
+        return this.sendEvent(MessagingEnums.EventMessageTypes.CHANGE_PRESENCE_STATUS, {presence})
     }
 
     getFileUrl = (fileId) => {

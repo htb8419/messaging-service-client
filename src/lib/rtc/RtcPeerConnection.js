@@ -130,21 +130,21 @@ function onAnswer(answer) {
 }
 
 const handleRtcEvents = (eventType, rtcObject) => {
-    console.debug('webRtcEvents=',eventType,', webRtcCallee=',webRtcCallee)
+    console.debug('webRtcEvents=', eventType
+        , ' signalingState=', (rtcConnection && rtcConnection.signalingState)
+        , ' connectionState=', (rtcConnection && rtcConnection.connectionState)
+        , ' iceConnectionState=', (rtcConnection && rtcConnection.iceConnectionState)
+    )
     switch (eventType) {
         case 'CALL_REQUEST':
-            if (!webRtcCallee) {
-                webRtcCallee = true
-                initRtcPeerConnection().then(() => {
-                    sendRtcEvent('CALL_ACCEPTED', {})
-                })
-            }
+            webRtcCallee = true
+            initRtcPeerConnection().then(() => {
+                sendRtcEvent('CALL_ACCEPTED', {})
+            })
             break
         case 'CALL_ACCEPTED':
-            if (!webRtcCallee) {
-                sendOffer()
-                webRtcConnectionTimeout = setTimeout(webRtcReconnect, 3000)
-            }
+            sendOffer()
+            webRtcConnectionTimeout = setTimeout(webRtcReconnect, 3000)
             break
         case 'OFFER':
             onOffer(rtcObject)
@@ -157,6 +157,9 @@ const handleRtcEvents = (eventType, rtcObject) => {
             break
         case 'END_CALL':
             closeRtcPeerConnection()
+            if (rtcObject && rtcObject.forceCloseSession) {
+                publishRtcConnectionState('END_CALL')
+            }
             break
     }
 }
@@ -175,12 +178,25 @@ function pauseLocalVideo() {
     }
     if (_localVideoPlayPromise) {
         _localVideoPlayPromise.finally(() => {
+            if (localVideo.srcObject) {
+                localVideo.srcObject.getTracks().forEach(track => {
+                    track.stop()
+                })
+            }
             localVideo.pause()
             _localVideoPlayPromise = null
         })
     } else {
         localVideo.pause()
     }
+}
+
+function canStartRtcCall() {
+    if (webRtcCallee) {
+        return false
+    }
+    return rtcConnection === null ||
+        (rtcConnection.signalingState === 'stable' && rtcConnection.connectionState === 'new')
 }
 
 const getLocalVideo = () => {
@@ -192,7 +208,10 @@ function sendRtcEvent(state, rtcObject) {
 }
 
 function publishRtcConnectionState(connectionState) {
-    console.debug('rtcConnection.state >> ', connectionState)
+    console.debug('call state changed >> ', connectionState
+        , ' signalingState=', rtcConnection.signalingState
+        , ' connectionState=', rtcConnection.connectionState
+        , ' iceConnectionState=', rtcConnection.iceConnectionState)
     CustomEventDispatcher.dispatchEvent(MessagingEnums.ApplicationEvents.CALL_STATE_CHANGE, {state: connectionState})
 }
 
@@ -236,5 +255,6 @@ export {
     handleRtcEvents,
     closeRtcPeerConnection,
     playLocalVideo,
-    pauseLocalVideo
+    pauseLocalVideo,
+    canStartRtcCall
 }
