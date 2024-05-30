@@ -60,10 +60,11 @@ class StompClient {
         let {socketUrl} = ApplicationConfig.getConfig()
         let {accessToken, sessionId} = SecurityContextHolder.getCurrentContext()
         const brokerURL = `${socketUrl}/websocket?access_token=${accessToken}&sid=${sessionId}`
-        //const brokerURL = `ws://192.168.103.127:9090/ws-adapter/websocket?access_token=${accessToken}&sid=${sessionId}`
+        //const brokerURL = `ws://192.168.105.126:9090/websocket?access_token=${accessToken}&sid=${sessionId}`
         this.stompClient = window.Stomp.client(brokerURL)
         this.stompClient.debug = (msg) => {
-        }//console.debug('$stomp: ', msg)
+            console.debug('$stomp: ', msg)
+        }
     }
 
     tryConnect = (retryCount = 0) => {

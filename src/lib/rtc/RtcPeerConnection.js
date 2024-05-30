@@ -11,6 +11,7 @@ let webRtcAutoReconnect = 0
 let webRtcCallee = false;
 
 const closeRtcPeerConnection = () => {
+    console.debug('closeRtcPeerConnection')
     const WEB_RTC_HTML_ELEMENTS = ['video#remoteVideo', 'video#localVideo']
     WEB_RTC_HTML_ELEMENTS.forEach(selector => {
         let element = document.querySelector(selector)
@@ -73,7 +74,7 @@ const createRtcConnection = () => {
             case "failed":
             case "closed":
                 connectionState = 'closed'
-                communicationService.endCall()
+                communicationClient.endCall()
                 break;
         }
         publishRtcConnectionState(connectionState)
@@ -105,7 +106,12 @@ function sendOffer() {
         offerToReceiveAudio: true,
         offerToReceiveVideo: true
     }).then(offer => {
-        rtcConnection.setLocalDescription(offer).then(() => sendRtcEvent('OFFER', offer))
+        rtcConnection.setLocalDescription(offer).then(() => {
+            sendRtcEvent('OFFER', offer)
+            if (webRtcAutoReconnect < 2) {
+                webRtcConnectionTimeout = setTimeout(webRtcReconnect, 3000)
+            }
+        })
     }).catch(handleRtcErrors)
 }
 
@@ -141,10 +147,10 @@ const handleRtcEvents = (eventType, rtcObject) => {
                 sendRtcEvent('CALL_ACCEPTED', {})
             })
             break
-        case 'CALL_ACCEPTED':
+        case 'CALL_ACCEPTED': {
             sendOffer()
-            webRtcConnectionTimeout = setTimeout(webRtcReconnect, 3000)
             break
+        }
         case 'OFFER':
             onOffer(rtcObject)
             break
@@ -165,25 +171,35 @@ const handleRtcEvents = (eventType, rtcObject) => {
 
 function playLocalVideo() {
     let localVideo = getLocalVideo()
-    if (localVideo.srcObject && localVideo.paused) {
-        _localVideoPlayPromise = localVideo.play()
+    if (localVideo.srcObject) {
+        if(localVideo.paused){
+            _localVideoPlayPromise = localVideo.play()
+        }
+        toggleEnabledVideoStream(localVideo.srcObject, true)
     }
 }
 
 function pauseLocalVideo() {
     let localVideo = getLocalVideo()
-    if (localVideo.paused) {
-        return
-    }
     if (_localVideoPlayPromise) {
         _localVideoPlayPromise.finally(() => {
-            stopMediaStreamTracks(localVideo.srcObject)
+            toggleEnabledVideoStream(localVideo.srcObject, false)
             localVideo.pause()
             _localVideoPlayPromise = null
         })
     } else {
+        toggleEnabledVideoStream(localVideo.srcObject, false)
         localVideo.pause()
     }
+}
+
+function toggleEnabledVideoStream(stream, enabled) {
+    stream.getTracks().forEach(t => {
+        console.debug('track.kind >>', t.kind)
+        if (t.kind === 'video') {
+            t.enabled = enabled
+        }
+    });
 }
 
 function stopMediaStreamTracks(mediaStream) {
@@ -208,7 +224,7 @@ const getLocalVideo = () => {
 }
 
 function sendRtcEvent(state, rtcObject) {
-    communicationService.sendRtcEvent(state, rtcObject)
+    communicationClient.sendRtcEvent(state, rtcObject)
 }
 
 function publishRtcConnectionState(connectionState) {
@@ -221,13 +237,14 @@ function publishRtcConnectionState(connectionState) {
 
 function webRtcReconnect() {
     stopWebRtcReconnect()
-    communicationService.endCall()
-    if (webRtcAutoReconnect++ < 1) {
-        communicationService.makeCall()
+    communicationClient.endCall()
+    if (webRtcAutoReconnect++ < 2) {
+        communicationClient.makeCall()
     }
 }
 
 function stopWebRtcReconnect() {
+    console.debug('stop rtcReconnect timeout, webRtcAutoReconnect=',webRtcAutoReconnect)
     if (webRtcConnectionTimeout) {
         clearTimeout(webRtcConnectionTimeout)
         webRtcConnectionTimeout = null

@@ -1,11 +1,11 @@
 {
   "name": "@dms-im/messaging-service",
-  "version": "1.2.0-b16",
+  "version": "1.2.0-b20240529",
   "description": "",
   "type": "module",
   "module": "./dist/index.es.js",
   "keywords": [],
-  "author": "",
+  "author": "h_tayebi",
   "license": "ISC",
   "browserslist": [
     ">.25% or last 5 versions,not dead,not IE 11,not op_mini all"

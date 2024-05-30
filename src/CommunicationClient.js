@@ -1,6 +1,3 @@
-//require for webrtc shim
-import adapter from 'webrtc-adapter'
-
 import * as webRTc from "./lib/rtc/RtcPeerConnection.js"
 import {CustomEventDispatcher} from "./lib"
 import MessagingEnums from "./model/MessagingEnums"
@@ -8,6 +5,7 @@ import ApplicationConfig from "./ApplicationConfig.js"
 import StompClient from "./StompClient.js"
 import {UIEvents} from "./model/index.js"
 import getParticipantsState from "./lib/getParticipantsState.js"
+import XhrRequest from "./lib/XhrRequest.js";
 
 class CommunicationClient {
 
@@ -19,9 +17,12 @@ class CommunicationClient {
         CustomEventDispatcher.registerEventListener(MessagingEnums.ApplicationEvents.THROW_EXCEPTION, this._handleAppEvents)
 
         this.messageService = new StompClient()
-        window.communicationService = this
+        window.communicationClient = this
     }
 
+    getRoomMessages = () => {
+        return XhrRequest.GET(`/room/messages/${this.roomId}`)
+    }
     getParticipantsState = async () => {
         return getParticipantsState(this.roomId)
     }
@@ -29,7 +30,7 @@ class CommunicationClient {
         webRTc.closeRtcPeerConnection()
         this.changePresenceState(MessagingEnums.UserPresenceState.OFFLINE).then(() => {
             this.messageService.disconnect()
-            window.communicationService = null
+            window.communicationClient = null
         })
     }
     sendEvent = async (eventType, payload) => {
@@ -65,7 +66,7 @@ class CommunicationClient {
         webRTc.pauseLocalVideo()
     }
 
-    sendRtcEvent = (state, rtcObject) => {
+    sendRtcEvent = async (state, rtcObject) => {
         return this.sendEvent(MessagingEnums.EventMessageTypes.WRTC, {
             state,
             rtcObject

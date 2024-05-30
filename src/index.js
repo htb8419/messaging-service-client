@@ -1,3 +1,6 @@
+//require for webrtc shim
+import adapter from 'webrtc-adapter'
+
 import ApplicationConfig from "./ApplicationConfig"
 import MessagingEnums from './model/MessagingEnums'
 import CommunicationClient from './CommunicationClient.js'
