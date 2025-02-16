@@ -1,6 +1,6 @@
 {
   "name": "@dms-im/messaging-service",
-  "version": "1.2.0-b20240529",
+  "version": "1.2.0-b20240609",
   "description": "",
   "type": "module",
   "module": "./dist/index.es.js",
