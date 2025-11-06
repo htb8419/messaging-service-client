@@ -9,7 +9,8 @@ import XhrRequest from "./lib/XhrRequest.js";
 
 class CommunicationClient {
 
-    constructor(roomId) {
+    constructor() {
+        let {roomId} = ApplicationConfig.getConfig()
         this.roomId = roomId
         CustomEventDispatcher.registerEventListener(MessagingEnums.ApplicationEvents.CONNECTION_STATE_CHANGE, this._handleAppEvents)
         CustomEventDispatcher.registerEventListener(MessagingEnums.ApplicationEvents.RECEIVED_MESSAGE, this._handleAppEvents)
@@ -18,6 +19,10 @@ class CommunicationClient {
 
         this.messageService = new StompClient()
         window.communicationClient = this
+    }
+
+    getRoomId (){
+        return this.roomId
     }
 
     getRoomMessages = () => {
@@ -72,6 +77,7 @@ class CommunicationClient {
             rtcObject
         })
     }
+
     changeTypingState = (state) => {
         if (MessagingEnums.typingState.hasOwnProperty(state)) {
             this.sendEvent(MessagingEnums.EventMessageTypes.TYPING_STATE, {state})
@@ -85,10 +91,6 @@ class CommunicationClient {
     getFileUrl = (fileId) => {
         let {fileServiceUrl} = ApplicationConfig.getConfig()
         return fileServiceUrl + "/" + fileId
-    }
-
-    getRoomId = () => {
-        return this.roomId
     }
 
     //  ***   Handle Events   ***

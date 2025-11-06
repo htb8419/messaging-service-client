@@ -14,9 +14,9 @@
     "dist"
   ],
   "scripts": {
-    "create-npm-link": "npm link",
     "build&watch": "rollup -c --format es --watch",
     "build": "rollup -c --format es",
+    "create-npm-link": "npm run build && npm link",
     "publish": "npm publish --log-level=debug"
   },
   "devDependencies": {
