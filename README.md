@@ -3,7 +3,7 @@
 
 ## Getting started
 
-### Get roomInfo
+### import functions & class
 
 ```javascript
 
