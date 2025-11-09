@@ -73,11 +73,11 @@ const createRtcConnection = () => {
             case "disconnected":
             case "failed":
             case "closed":
-                connectionState = 'closed'
+                connectionState = 'DISCONNECTED'
                 communicationClient.endCall()
                 break;
         }
-        publishRtcConnectionState(connectionState)
+        publishRtcConnectionState(connectionState.toUpperCase())
     }
 }
 

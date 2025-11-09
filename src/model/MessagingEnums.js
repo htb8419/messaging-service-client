@@ -59,6 +59,11 @@ const MessagingEnums = {
         CALL_REQUEST: 'CALL_REQUEST',
         CALL_ACCEPTED: 'CALL_ACCEPTED',
     },
+    CallStateChangeEvent: {
+        CONNECTED: 'CONNECTED',
+        DISCONNECTED: 'DISCONNECTED',
+        END_CALL: 'END_CALL'
+    },
     VoiceCallStates: {
         CONNECTING: 'CONNECTING',
         CONNECTED: 'CONNECTED',

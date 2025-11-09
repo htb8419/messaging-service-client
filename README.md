@@ -19,7 +19,7 @@ const instantMessagingOptions = {
     roomId:roomId,
     accessToken:accessToken,
     serverUrl: `${API_SERVER_URL}`,
-    callback: handleEvent // func(type,detail)
+    callback: handleEvent //func(type,detail)
 }
 initializeApp(instantMessagingOptions)
 window.communicationClient = new CommunicationClient();
@@ -50,7 +50,20 @@ messageService.buildTextMessage(roomId, text).then(message => {
 }).catch(this.handleException)
 
 ```
+### MakeCall
 
+```javascript
+
+window.communicationClient.makeCall()
+```
+
+### EndCall
+```javascript
+
+window.communicationClient.endCall()
+```
+
+---
 ### change typing state
 
 ```javascript
@@ -95,6 +108,7 @@ handleChatEvent = (eventType, detail) => {
 | RECEIVED_MESSAGE               | ReceivedMessageEvent                     |
 | MESSAGE_DELIVERY               | MessageDeliveryEvent                     |
 | TYPING_STATE_CHANGE            | TypingStateChangeEvent                   |
+| CALL_STATE_CHANGE              | CallStateChangeEvent                     |
 
 ---
 
@@ -146,5 +160,14 @@ interface MessageDeliveryEvent {
 
 interface TypingStateChangeEvent {
     state: string
+}
+```
+
+### CallStateChangeEvent
+
+```typescript
+
+interface CallStateChangeEvent {
+    state: 'CONNECTED' | 'DISCONNECTED' | ''
 }
 ```
