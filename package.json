@@ -1,45 +1,40 @@
 {
   "name": "@dms-im/messaging-service",
-  "version": "1.2.0-b20240609",
-  "description": "",
+  "version": "3.0.0",
+  "description": "DMS Instant Messaging client library — STOMP/WebSocket messaging and WebRTC calling",
   "type": "module",
-  "module": "./dist/index.es.js",
-  "keywords": [],
-  "author": "h_tayebi",
-  "license": "ISC",
-  "browserslist": [
-    ">.25% or last 5 versions,not dead,not IE 11,not op_mini all"
-  ],
-  "files": [
-    "dist"
-  ],
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    }
+  },
+  "files": ["dist"],
   "scripts": {
-    "build&watch": "rollup -c --format es --watch",
-    "build": "rollup -c --format es",
-    "create-npm-link": "npm run build && npm link",
-    "publish": "npm publish --log-level=debug"
+    "build": "tsup",
+    "build:watch": "tsup --watch",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "typecheck": "tsc --noEmit",
+    "prepublishOnly": "npm run build"
+  },
+  "dependencies": {
+    "@stomp/stompjs": "^7.0.0",
+    "webrtc-adapter": "^8.2.3"
   },
   "devDependencies": {
-    "@babel/plugin-transform-arrow-functions": "^7.20.7",
-    "@babel/plugin-transform-typescript": "^7.20.7",
-    "@babel/preset-env": "^7.20.2",
-    "@babel/preset-typescript": "^7.18.6",
-    "@rollup/plugin-babel": "^6.0.3",
-    "@rollup/plugin-commonjs": "^24.0.0",
-    "@rollup/plugin-json": "^6.0.0",
-    "@rollup/plugin-node-resolve": "^15.0.1",
-    "@rollup/plugin-typescript": "^10.0.1",
-    "@types/react": "^18.0.26",
-    "rollup": "^3.8.1",
-    "rollup-plugin-dts": "^5.1.0",
-    "rollup-plugin-peer-deps-external": "^2.2.4",
-    "tslib": "^2.4.1",
-    "typescript": "^4.9.4"
+    "@vitest/coverage-v8": "^1.0.0",
+    "jsdom": "^24.0.0",
+    "tsup": "^8.0.0",
+    "typescript": "^5.4.0",
+    "vitest": "^1.0.0"
   },
   "publishConfig": {
     "registry": "https://nexus.demisco.com/repository/dms-npm-repo/"
-  },
-  "dependencies": {
-    "webrtc-adapter": "8.2.3"
   }
 }
