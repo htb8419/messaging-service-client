@@ -11,8 +11,8 @@ export class Auth {
       throw new Error('JWT payload must contain user_name')
     }
 
-    this.username = userInfo.user_name
-    this.sessionId = userInfo.user_name
+    this.username = userInfo.user_name as string
+    this.sessionId = userInfo.user_name as string
   }
 
   private static decodePayload(token: string): Record<string, unknown> {
