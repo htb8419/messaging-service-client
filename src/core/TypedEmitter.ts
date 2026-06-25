@@ -1,4 +1,4 @@
-export class TypedEmitter<T extends Record<string, (...args: any[]) => void>> {
+export class TypedEmitter<T extends Record<keyof T, (...args: any[]) => void>> {
   private handlers = new Map<keyof T, Set<T[keyof T]>>()
 
   on<K extends keyof T>(event: K, handler: T[K]): void {
