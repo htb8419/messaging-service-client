@@ -80,4 +80,83 @@ describe('MessagingClient', () => {
     const url = client.getFileUrl('file-1')
     expect(url).toBe('https://api.example.com/fs/file/file-1')
   })
+
+  it('sendTypingState delegates to MessageService', async () => {
+    const spy = vi.spyOn(client['messageService'], 'sendTypingState')
+    await client.sendTypingState('START_TYPING')
+    expect(spy).toHaveBeenCalledWith('START_TYPING')
+  })
+
+  it('sendPresence delegates to MessageService', async () => {
+    const spy = vi.spyOn(client['messageService'], 'sendPresence')
+    await client.sendPresence('ONLINE')
+    expect(spy).toHaveBeenCalledWith('ONLINE')
+  })
+
+  it('toggleMicrophone delegates', () => {
+    const spy = vi.spyOn(client['callService'], 'toggleMicrophone')
+    client.toggleMicrophone(false)
+    expect(spy).toHaveBeenCalledWith(false)
+  })
+
+  it('toggleCamera delegates', () => {
+    const spy = vi.spyOn(client['callService'], 'toggleCamera')
+    client.toggleCamera(true)
+    expect(spy).toHaveBeenCalledWith(true)
+  })
+
+  it('endCall with forceCloseSession', async () => {
+    const spy = vi.spyOn(client['callService'], 'endCall')
+    await client.endCall(true)
+    expect(spy).toHaveBeenCalledWith(true)
+  })
+
+  it('getRoomMessages fetches from API', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
+      ok: true,
+      json: () => Promise.resolve({ payload: [{ room: 'r1', text: 'hi' }] }),
+    }))
+    const r = await client.getRoomMessages()
+    expect(r).toEqual([{ room: 'r1', text: 'hi' }])
+    vi.unstubAllGlobals()
+  })
+
+  it('getRoomMessages throws on non-ok', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: false, status: 500 }))
+    await expect(client.getRoomMessages()).rejects.toThrow()
+    vi.unstubAllGlobals()
+  })
+
+  it('getRoomMessages returns empty when no payload', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: true, json: () => Promise.resolve({}) }))
+    const r = await client.getRoomMessages()
+    expect(r).toEqual([])
+    vi.unstubAllGlobals()
+  })
+
+  it('getParticipantsState fetches from API', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
+      ok: true,
+      json: () => Promise.resolve({ payload: [{ p: 'ONLINE' }] }),
+    }))
+    const r = await client.getParticipantsState()
+    expect(r).toEqual([{ p: 'ONLINE' }])
+    vi.unstubAllGlobals()
+  })
+
+  it('getParticipantsState throws on non-ok', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: false, status: 500 }))
+    await expect(client.getParticipantsState()).rejects.toThrow()
+    vi.unstubAllGlobals()
+  })
+
+  it('getRoomInfo delegates to RoomInfoService', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
+      ok: true,
+      json: () => Promise.resolve({ result: { currentParticipant: { token: 't1' } } }),
+    }))
+    const r = await client.getRoomInfo('c123')
+    expect(r).toEqual({ currentParticipant: { token: 't1' } })
+    vi.unstubAllGlobals()
+  })
 })

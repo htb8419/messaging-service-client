@@ -17,6 +17,7 @@ import { StompConnection } from '../../src/connection/StompConnection'
 import { MessageService } from '../../src/messaging/MessageService'
 import type { MessagingEventMap } from '../../src/events/types'
 import { EventType } from '../../src/events/EventType'
+import { RtcSignalType } from '../../src/calling/types'
 
 const token = btoa(JSON.stringify({ alg: 'HS256' })) + '.' + btoa(JSON.stringify({ user_name: 'u1' })) + '.sig'
 const options: MessagingOptions = { serverUrl: 'https://x.com', accessToken: token, roomId: 'r1' }
@@ -50,5 +51,50 @@ describe('CallService', () => {
     events.on(EventType.CallChange, handler)
     await service.endCall()
     expect(handler).toHaveBeenCalled()
+  })
+
+  it('endCall with forceCloseSession emits END_CALL', async () => {
+    const handler = vi.fn()
+    events.on(EventType.CallChange, handler)
+    await service.endCall(true)
+    const call = handler.mock.calls[0]![0]!
+    expect(call.state).toBe('END_CALL')
+  })
+
+  it('handleSignal END_CALL closes and emits', async () => {
+    const handler = vi.fn()
+    events.on(EventType.CallChange, handler)
+    await service.handleSignal(RtcSignalType.END_CALL, {})
+    expect(handler).toHaveBeenCalledWith(expect.objectContaining({ state: 'END_CALL' }))
+  })
+
+  it('handleSignal unrecognized type emits nothing', async () => {
+    const handler = vi.fn()
+    events.on(EventType.CallChange, handler)
+    await service.handleSignal('UNKNOWN', {})
+    expect(handler).not.toHaveBeenCalled()
+  })
+
+  it('sendDeliveryAck sends delivery event', async () => {
+    const spy = vi.spyOn(messageService['connection'], 'send')
+    await messageService.sendDeliveryAck('msg1', 'SERVER')
+    const [dest, , body] = spy.mock.calls[0]!
+    expect(dest).toBe('/app/event')
+    const parsed = JSON.parse(body!)
+    expect(parsed.type).toBe('DELIVERY')
+  })
+
+  it('sendEvent sends custom event', async () => {
+    const spy = vi.spyOn(messageService['connection'], 'send')
+    await messageService.sendEvent('CUSTOM', { key: 'val' })
+    const [dest, , body] = spy.mock.calls[0]!
+    expect(dest).toBe('/app/event')
+    const parsed = JSON.parse(body!)
+    expect(parsed.type).toBe('CUSTOM')
+  })
+
+  it('sendMessage with file throws', async () => {
+    const fakeFile = new File([''], 'test.txt')
+    await expect(messageService.sendMessage('', fakeFile)).rejects.toThrow('File upload not yet implemented')
   })
 })
