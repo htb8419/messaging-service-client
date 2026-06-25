@@ -1,9 +1,0 @@
-{
-  "errors": {
-    "ERROR_ON_ACCESSING_MEDIA_DEVICES": "امکان دسترسی به میکروفون/دوربین وجود ندارد.",
-    "MAX_FILE_SIZE_VIOLATION": "حجم فایل انتخابی بزرگتر از مقدار مجاز است.",
-    "INVALID_APP_OPTIONS" : "تنظیمات برنامه نامعتبر است.",
-    "INVALID_ACCESS_TOKEN" :  "توکن نامعتبر است.",
-    "CONNECTION_FAILED": "امکان برقراری ارتباط با سرور وجود ندارد."
-  }
-}
