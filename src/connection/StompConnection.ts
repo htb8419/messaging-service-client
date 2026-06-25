@@ -22,10 +22,14 @@ export class StompConnection {
     private readonly auth: Auth,
     private readonly events: TypedEmitter<MessagingEventMap>,
   ) {
-    const brokerURL = `${config.socketUrl}/websocket?access_token=${auth.accessToken}&sid=${auth.sessionId}`
+    const brokerURL = `${config.socketUrl}/websocket`
 
     this.stompClient = new StompClient({
       brokerURL,
+      connectHeaders: {
+        access_token: auth.accessToken,
+        sid: auth.sessionId,
+      },
       debug: (msg: string) => console.debug('$stomp', msg),
       connectionTimeout: 5000,
       reconnectDelay: config.reconnectDelay,
