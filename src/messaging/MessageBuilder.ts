@@ -1,4 +1,6 @@
 import type { OutgoingMessage } from '../events/types'
+import { MessageType } from '../enums/MessageType'
+import { type EventSubType } from '../enums/EventSubType'
 
 export class MessageBuilder {
   private sequenceNumber = 1
@@ -7,7 +9,7 @@ export class MessageBuilder {
 
   async buildMessage(
     roomId: string,
-    messageType: string,
+    messageType: MessageType,
     payload: Record<string, unknown>,
   ): Promise<OutgoingMessage> {
     if (!roomId) {
@@ -24,10 +26,10 @@ export class MessageBuilder {
 
   async buildEvent(
     roomId: string,
-    eventType: string,
+    eventType: EventSubType,
     payload: Record<string, unknown>,
   ): Promise<OutgoingMessage> {
-    return this.buildMessage(roomId, 'EVENT', {
+    return this.buildMessage(roomId, MessageType.EVENT, {
       type: eventType,
       ...payload,
     })

@@ -3,6 +3,8 @@ import type { Config } from '../core/Config'
 import type { Auth } from '../core/Auth'
 import { TypedEmitter } from '../core/TypedEmitter'
 import { ConnectionState } from '../enums/ConnectionState'
+import { MessageType } from '../enums/MessageType'
+import { EventSubType } from '../enums/EventSubType'
 import { EventType } from '../events/EventType'
 import { StompDestinations } from '../events/types'
 import type {
@@ -110,24 +112,24 @@ export class StompConnection {
   private dispatchMessage(payload: Record<string, unknown>): void {
     const messageType = payload.messageType as string | undefined
 
-    if (messageType === 'EVENT') {
+    if (messageType === MessageType.EVENT) {
       const eventType = payload.type as string | undefined
-      if (eventType === 'TYPING') {
+      if (eventType === EventSubType.TYPING) {
         this.events.emit(EventType.TypingChange, {
           state: (payload.state as 'START_TYPING' | 'STOP_TYPING') || 'STOP_TYPING',
           from: payload.from as string || '',
         })
-      } else if (eventType === 'PRESENCE') {
+      } else if (eventType === EventSubType.PRESENCE) {
         this.events.emit(EventType.PresenceChange, {
           presence: (payload.presence as 'ONLINE' | 'AWAY' | 'BUSY' | 'OFFLINE') || 'OFFLINE',
           from: payload.from as string || '',
         })
-      } else if (eventType === 'DELIVERY') {
+      } else if (eventType === EventSubType.DELIVERY) {
         this.events.emit(EventType.MessageDelivery, {
           clientMessageId: payload.clientMessageId as string || '',
           deliveryState: (payload.deliveryState as 'SERVER' | 'CLIENT') || 'SERVER',
         })
-      } else if (eventType === 'WRTC') {
+      } else if (eventType === EventSubType.WRTC) {
         // WebRTC signals go to CallService via the message event with type WRTC
         this.events.emit(EventType.Message, payload as unknown as ReceivedMessage)
       }

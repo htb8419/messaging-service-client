@@ -5,6 +5,8 @@ import { Config, type MessagingOptions } from '../../src/core/Config'
 import { Auth } from '../../src/core/Auth'
 import { TypedEmitter } from '../../src/core/TypedEmitter'
 import type { MessagingEventMap } from '../../src/events/types'
+import { MessageType } from '../../src/enums/MessageType'
+import { EventSubType } from '../../src/enums/EventSubType'
 
 vi.mock('@stomp/stompjs', () => ({
   Client: vi.fn().mockImplementation(() => ({
@@ -44,7 +46,7 @@ describe('MessageService', () => {
     expect(dest).toBe('/app/im')
     const parsed = JSON.parse(body!)
     expect(parsed.text).toBe('hello world')
-    expect(parsed.messageType).toBe('IM')
+    expect(parsed.messageType).toBe(MessageType.INSTANT)
     expect(parsed.room).toBe('room-1')
   })
 
@@ -54,7 +56,7 @@ describe('MessageService', () => {
     const [dest, , body] = sendSpy.mock.calls[0]!
     expect(dest).toBe('/app/event')
     const parsed = JSON.parse(body!)
-    expect(parsed.type).toBe('TYPING')
+    expect(parsed.type).toBe(EventSubType.TYPING)
     expect(parsed.state).toBe('START_TYPING')
   })
 
@@ -64,7 +66,7 @@ describe('MessageService', () => {
     const [dest, , body] = sendSpy.mock.calls[0]!
     expect(dest).toBe('/app/event')
     const parsed = JSON.parse(body!)
-    expect(parsed.type).toBe('PRESENCE')
+    expect(parsed.type).toBe(EventSubType.PRESENCE)
     expect(parsed.presence).toBe('ONLINE')
   })
 
@@ -74,7 +76,7 @@ describe('MessageService', () => {
     const [dest, , body] = sendSpy.mock.calls[0]!
     expect(dest).toBe('/app/event')
     const parsed = JSON.parse(body!)
-    expect(parsed.type).toBe('WRTC')
+    expect(parsed.type).toBe(EventSubType.WRTC)
     expect(parsed.state).toBe('CALL_REQUEST')
   })
 })

@@ -5,7 +5,6 @@ import type { MessagingEventMap, CallStateEvent } from '../events/types'
 import { EventType } from '../events/EventType'
 import { CallState } from '../enums/CallState'
 import { RtcSignalType } from './types'
-import type { RtcSignalType as RtcSignal } from './types'
 import { PeerConnection } from './PeerConnection'
 import { MediaManager } from './MediaManager'
 
@@ -127,9 +126,9 @@ export class CallService {
     }
   }
 
-  private emitState(state: string): void {
+  private emitState(state: CallStateEvent['state']): void {
     this.events.emit(EventType.CallChange, {
-      state: state as CallStateEvent['state'],
+      state,
     })
   }
 }

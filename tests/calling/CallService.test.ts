@@ -17,6 +17,7 @@ import { StompConnection } from '../../src/connection/StompConnection'
 import { MessageService } from '../../src/messaging/MessageService'
 import type { MessagingEventMap } from '../../src/events/types'
 import { EventType } from '../../src/events/EventType'
+import { CallState } from '../../src/enums/CallState'
 import { RtcSignalType } from '../../src/calling/types'
 
 const token = btoa(JSON.stringify({ alg: 'HS256' })) + '.' + btoa(JSON.stringify({ user_name: 'u1' })) + '.sig'
@@ -58,14 +59,14 @@ describe('CallService', () => {
     events.on(EventType.CallChange, handler)
     await service.endCall(true)
     const call = handler.mock.calls[0]![0]!
-    expect(call.state).toBe('END_CALL')
+    expect(call.state).toBe(CallState.END_CALL)
   })
 
   it('handleSignal END_CALL closes and emits', async () => {
     const handler = vi.fn()
     events.on(EventType.CallChange, handler)
     await service.handleSignal(RtcSignalType.END_CALL, {})
-    expect(handler).toHaveBeenCalledWith(expect.objectContaining({ state: 'END_CALL' }))
+    expect(handler).toHaveBeenCalledWith(expect.objectContaining({ state: CallState.END_CALL }))
   })
 
   it('handleSignal unrecognized type emits nothing', async () => {

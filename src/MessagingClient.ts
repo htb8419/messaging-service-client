@@ -1,6 +1,7 @@
 import { Config, type MessagingOptions } from './core/Config'
 import { Auth } from './core/Auth'
 import { TypedEmitter } from './core/TypedEmitter'
+import { HttpClient } from './core/HttpClient'
 import { StompConnection } from './connection/StompConnection'
 import { MessageService } from './messaging/MessageService'
 import { CallService } from './calling/CallService'
@@ -15,6 +16,7 @@ export class MessagingClient {
   private readonly config: Config
   private readonly auth: Auth
   private readonly events: TypedEmitter<MessagingEventMap>
+  private readonly http: HttpClient
   private readonly connection: StompConnection
   private readonly messageService: MessageService
   private readonly callService: CallService
@@ -25,6 +27,7 @@ export class MessagingClient {
     this.config = new Config(options)
     this.auth = new Auth(options.accessToken)
     this.events = new TypedEmitter<MessagingEventMap>()
+    this.http = new HttpClient(this.config.serverUrl, this.auth.accessToken)
 
     this.connection = new StompConnection(this.config, this.auth, this.events)
     this.messageService = new MessageService(this.connection, this.config, this.auth)
@@ -61,22 +64,13 @@ export class MessagingClient {
   }
 
   async getRoomMessages(): Promise<ReceivedMessage[]> {
-    const response = await fetch(`${this.config.serverUrl}/room/messages/${this.config.roomId}`, {
-      headers: { Authorization: `bearer ${this.auth.accessToken}` },
-    })
-    if (!response.ok) throw new Error(`Failed to fetch room messages: ${response.status}`)
-    const json = await response.json() as { payload?: ReceivedMessage[] }
-    return json.payload ?? []
+    const result = await this.http.get<ReceivedMessage[]>(`/room/messages/${this.config.roomId}`)
+    return Array.isArray(result) ? result : []
   }
 
   async getParticipantsState(): Promise<unknown[]> {
-    const response = await fetch(
-      `${this.config.serverUrl}/room/participantStates/${this.config.roomId}`,
-      { headers: { Authorization: `bearer ${this.auth.accessToken}` } },
-    )
-    if (!response.ok) throw new Error(`Failed to fetch participant states: ${response.status}`)
-    const json = await response.json() as { payload?: unknown[] }
-    return json.payload ?? []
+    const result = await this.http.get<unknown[]>(`/room/participantStates/${this.config.roomId}`)
+    return Array.isArray(result) ? result : []
   }
 
   async getRoomInfo(roomCode: string): Promise<unknown> {

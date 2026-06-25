@@ -2,6 +2,8 @@ import type { StompConnection } from '../connection/StompConnection'
 import type { Config } from '../core/Config'
 import type { Auth } from '../core/Auth'
 import { MessageBuilder } from './MessageBuilder'
+import { MessageType } from '../enums/MessageType'
+import { EventSubType } from '../enums/EventSubType'
 import { StompDestinations } from '../events/types'
 import type { OutgoingMessage } from '../events/types'
 
@@ -23,7 +25,7 @@ export class MessageService {
       throw new Error('File upload not yet implemented — use FileService.upload() first')
     }
 
-    const message = await this.builder.buildMessage(this.config.roomId, 'IM', payload)
+    const message = await this.builder.buildMessage(this.config.roomId, MessageType.INSTANT, payload)
     this.connection.send(
       StompDestinations.SEND_IM,
       {
@@ -35,17 +37,17 @@ export class MessageService {
   }
 
   async sendTypingState(state: string): Promise<void> {
-    const message = await this.builder.buildEvent(this.config.roomId, 'TYPING', { state })
+    const message = await this.builder.buildEvent(this.config.roomId, EventSubType.TYPING, { state })
     this.sendEventMessage(message)
   }
 
   async sendPresence(presence: string): Promise<void> {
-    const message = await this.builder.buildEvent(this.config.roomId, 'PRESENCE', { presence })
+    const message = await this.builder.buildEvent(this.config.roomId, EventSubType.PRESENCE, { presence })
     this.sendEventMessage(message)
   }
 
   async sendDeliveryAck(clientMessageId: string, deliveryState: 'SERVER' | 'CLIENT'): Promise<void> {
-    const message = await this.builder.buildEvent(this.config.roomId, 'DELIVERY', {
+    const message = await this.builder.buildEvent(this.config.roomId, EventSubType.DELIVERY, {
       clientMessageId,
       deliveryState,
     })
@@ -53,12 +55,12 @@ export class MessageService {
   }
 
   async sendRtcSignal(state: string, rtcObject: unknown): Promise<void> {
-    const message = await this.builder.buildEvent(this.config.roomId, 'WRTC', { state, rtcObject })
+    const message = await this.builder.buildEvent(this.config.roomId, EventSubType.WRTC, { state, rtcObject })
     this.sendEventMessage(message)
   }
 
   async sendEvent(type: string, payload: Record<string, unknown>): Promise<void> {
-    const message = await this.builder.buildEvent(this.config.roomId, type, payload)
+    const message = await this.builder.buildEvent(this.config.roomId, type as EventSubType, payload)
     this.sendEventMessage(message)
   }
 
